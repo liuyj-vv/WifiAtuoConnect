@@ -1,6 +1,8 @@
 # service和intentService
 # 创建service
-# 问题
+# wifi广播分析
+
+# 自启动问题
 假如APP没有Activity，只有Service，或者安装完毕后无法手动运行，也不能通过其他的APP来启动此APP的Service或者Activity，如何安装后，可以开机启动呢？ PS：在可以修改Android系统代码的基础上，又有哪些方法呢？
 
 APP接收不到BOOT_COMPLETED广播可能的原因，有以下几种：
