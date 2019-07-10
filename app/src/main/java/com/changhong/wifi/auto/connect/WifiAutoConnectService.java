@@ -7,15 +7,23 @@ import android.util.Log;
 
 public class WifiAutoConnectService extends Service {
     String TAG = WifiAutoConnectService.class.getSimpleName();
+    int count = 0;
     public WifiAutoConnectService() {
-        while (true) {
-            try {
-                Thread.sleep(1000);
-                Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]");
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        Thread.sleep(1000);
+                        Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]"
+                                + " count: "+ count);
+                        count++;
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
-        }
+        }).start();
     }
 
     @Override
