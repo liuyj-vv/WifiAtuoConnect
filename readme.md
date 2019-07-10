@@ -1,3 +1,6 @@
+# 知识
+[Netd是Android系统中专门负责网络管理和控制的后台daemon程序]
+
 # service和intentService
 # 创建service
 # wifi广播分析

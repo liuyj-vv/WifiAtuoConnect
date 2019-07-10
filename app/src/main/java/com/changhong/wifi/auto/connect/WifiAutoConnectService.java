@@ -55,13 +55,14 @@ public class WifiAutoConnectService extends Service {
 
     private void wifiRegister(){
         IntentFilter filter = new IntentFilter();
-        // filter.addAction(WifiManager.ERROR_AUTHENTICATING);
-        filter.addAction(WifiManager.ACTION_PICK_WIFI_NETWORK);
+        filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
         filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
-        filter.addAction(WifiManager.RSSI_CHANGED_ACTION);
-        filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-        // 测试wifi验证密码错误问题
+        filter.addAction(WifiManager.NETWORK_IDS_CHANGED_ACTION);
         filter.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
+//        filter.addAction(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION);
+//        filter.addAction(WifiManager.LINK_CONFIGURATION_CHANGED_ACTION);
+        filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        filter.addAction(WifiManager.RSSI_CHANGED_ACTION);
         registerReceiver(new WifiReceiver(), filter);
     }
 }
