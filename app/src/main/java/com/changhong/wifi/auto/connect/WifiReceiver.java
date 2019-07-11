@@ -12,6 +12,6 @@ class WifiReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
         Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]"
-                + " action: "+ action);
+                + " action server: "+ action);
     }
 }
