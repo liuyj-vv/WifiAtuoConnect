@@ -34,7 +34,8 @@ public class MainActivity extends AppCompatActivity {
 
         mapListInit();
         listView = findViewById(R.id.listview);
-        listView.setAdapter(new WifiListAdapter(this, mapList, R.layout.layout_listview_item, from, to));
+        final WifiListAdapter wifiListAdapter = new WifiListAdapter(this, mapList, R.layout.layout_listview_item, from, to);
+        listView.setAdapter(wifiListAdapter);
 
         final int[] count = {10};
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -46,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
                 map.put(IMG, getResources().getDrawable(R.drawable.ic_launcher_background));
                 mapList.add(map);
                 count[0]++;
-                listView.notifyAll();
+                wifiListAdapter.notifyDataSetChanged();
             }
         });
     }
