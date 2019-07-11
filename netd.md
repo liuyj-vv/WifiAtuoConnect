@@ -1,3 +1,5 @@
+转： [!https://www.kancloud.cn/alex_wsc/android-wifi-nfc-gps/414018]
+
 Netd是Android系统中专门负责网络管理和控制的后台daemon程序，其功能主要分三大块：
 
 1. 设置防火墙（Firewall）、网络地址转换（NAT）、带宽控制、无线网卡软接入点（Soft Access Point）控制，网络设备绑定（Tether）等。
