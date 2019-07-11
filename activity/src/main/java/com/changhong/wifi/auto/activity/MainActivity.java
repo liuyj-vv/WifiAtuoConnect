@@ -1,5 +1,9 @@
 package com.changhong.wifi.auto.activity;
 
+import android.app.Activity;
+import android.content.Context;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.support.v4.util.ArrayMap;
@@ -18,18 +22,18 @@ public class MainActivity extends AppCompatActivity {
     String SSID = "SSID ";
     String IMG = "IMG";
 
-    String[] from = {BSSID, SSID, IMG};
-    int[] to = {R.id.BSSID, R.id.SSID, R.id.img};
+    String[] from = {SSID, BSSID, IMG};
+    int[] to = {R.id.SSID, R.id.BSSID, R.id.img};
 
     List<Map<String, Object>> mapList;
     ListView listView;
-
-//    WifiManager wifiManager = (WifiManager) this.getApplication().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+    WifiManager wifiManager;
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
 
         mapListInit();
@@ -41,13 +45,20 @@ public class MainActivity extends AppCompatActivity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Map<String, Object> map = new ArrayMap<>();
-                map.put(BSSID, "wifi BSSID"+ count[0]);
-                map.put(SSID, "wifi SSID"+ count[0]);
-                map.put(IMG, getResources().getDrawable(R.drawable.ic_launcher_background));
-                mapList.add(map);
-                count[0]++;
-                wifiListAdapter.notifyDataSetChanged();
+
+                if (null != wifiManager && wifiManager.isWifiEnabled()) {
+                    List<ScanResult> scanResultList = wifiManager.getScanResults();
+                    mapList.clear();
+                    for (int i=0; i<scanResultList.size(); i++) {
+                        Map<String, Object> map = new ArrayMap<>();
+                        map.put(BSSID, scanResultList.get(i).BSSID);
+                        map.put(SSID, scanResultList.get(i).SSID);
+                        map.put(IMG, getResources().getDrawable(R.drawable.ic_launcher_background));
+                        mapList.add(map);
+                    }
+                    wifiListAdapter.notifyDataSetChanged();
+                }
+
             }
         });
     }
