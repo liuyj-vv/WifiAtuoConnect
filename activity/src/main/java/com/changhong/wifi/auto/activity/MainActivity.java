@@ -5,6 +5,8 @@ import android.support.annotation.RequiresApi;
 import android.support.v4.util.ArrayMap;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 
 import java.util.ArrayList;
@@ -33,6 +35,20 @@ public class MainActivity extends AppCompatActivity {
         mapListInit();
         listView = findViewById(R.id.listview);
         listView.setAdapter(new WifiListAdapter(this, mapList, R.layout.layout_listview_item, from, to));
+
+        final int[] count = {10};
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Map<String, Object> map = new ArrayMap<>();
+                map.put(BSSID, "wifi BSSID"+ count[0]);
+                map.put(SSID, "wifi SSID"+ count[0]);
+                map.put(IMG, getResources().getDrawable(R.drawable.ic_launcher_background));
+                mapList.add(map);
+                count[0]++;
+                listView.notifyAll();
+            }
+        });
     }
 
 
