@@ -11,7 +11,9 @@ import android.support.annotation.RequiresApi;
 import android.support.v4.util.ArrayMap;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -35,6 +37,11 @@ public class MainActivity extends AppCompatActivity {
     WifiManager wifiManager;
     WifiListAdapter wifiListAdapter;
 
+    TextView textWifiHardState;
+    TextView textNetworkInfo;
+    TextView textWifiInfo;
+
+
     static MainActivity mainActivity;
 
     public MainActivity() {
@@ -53,6 +60,10 @@ public class MainActivity extends AppCompatActivity {
         mapList = new ArrayList<>();
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
+        textWifiHardState = findViewById(R.id.wifiHardState);
+        textNetworkInfo = findViewById(R.id.networkInfo);
+        textWifiInfo = findViewById(R.id.wifiInfo);
+
         textview_log = findViewById(R.id.textview_log);
         listView = findViewById(R.id.listview);
         wifiListAdapter = new WifiListAdapter(this, mapList, R.layout.layout_listview_item, from, to);
@@ -61,19 +72,32 @@ public class MainActivity extends AppCompatActivity {
         wifiRegister();
     }
 
+    @Override
+    protected void onDestroy() {
+        Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]");
+        super.onDestroy();
+    }
+
     public void wifiRegister(){
         IntentFilter filter = new IntentFilter();
-        filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
+        filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION); //用于监听Android Wifi打开或关闭的状态，
         filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
         filter.addAction(WifiManager.NETWORK_IDS_CHANGED_ACTION);
         filter.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
 //        filter.addAction(WifiManager.CONFIGURED_NETWORKS_CHANGED_ACTION);
 //        filter.addAction(WifiManager.LINK_CONFIGURATION_CHANGED_ACTION);
-        filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
+        filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION); //用于判断是否连接到了有效wifi（不能用于判断是否能够连接互联网）。
         filter.addAction(WifiManager.RSSI_CHANGED_ACTION);
 
         filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(new WifiReceiver(), filter);
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                wifiManager.startScan();
+            }
+        });
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)

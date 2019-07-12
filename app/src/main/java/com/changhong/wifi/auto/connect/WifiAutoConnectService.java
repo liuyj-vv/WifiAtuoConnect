@@ -22,7 +22,7 @@ public class WifiAutoConnectService extends Service {
                         Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]"
                                 + " count: "+ count);
                         count++;
-                        wifiAutoConnect();
+//                        wifiAutoConnect();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
