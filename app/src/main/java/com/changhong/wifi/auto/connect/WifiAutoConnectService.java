@@ -63,6 +63,7 @@ public class WifiAutoConnectService extends Service {
 //        filter.addAction(WifiManager.LINK_CONFIGURATION_CHANGED_ACTION);
         filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
         filter.addAction(WifiManager.RSSI_CHANGED_ACTION);
+        filter.addAction("TEST_ACTION");
         registerReceiver(new WifiReceiver(), filter);
     }
 }
