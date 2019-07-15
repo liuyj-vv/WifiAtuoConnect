@@ -38,11 +38,14 @@ class WifiReceiver extends BroadcastReceiver {
     String passwd;
 
     boolean isRunPingFlag = false;
+    Process process = null;
+
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
+        final Thread thread_stdout;
 
         wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         connectivityManager = (ConnectivityManager) context.getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -69,19 +72,17 @@ class WifiReceiver extends BroadcastReceiver {
 //                    Log.d(TAG, "reconnect: " + reconnect);
                 }
             }
+//            Log.d(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + "ssid: " + ssid + ", passwd: " + passwd + ", wifiType: " + wifiType + ", isRunPingFlag: " + isRunPingFlag);
 
             if (connectivityManager.getActiveNetworkInfo().isConnected()) {
                 try {
-                    final Thread thread_stdout;
-                    final Boolean[] flag = {true};
-
                     String strGateway = Utils.hisiIpLongToString(wifiManager.getDhcpInfo().gateway);
                     //Log.e(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + " strGateway: "+ strGateway);
                     if (!strGateway.equals("000.000.000.000") && true != isRunPingFlag) {
                         isRunPingFlag = true;
-                        Log.d(TAG, "ssid: " + ssid + ", passwd: " + passwd + ", wifiType: " + wifiType);
-                        final Process process = getRuntime().exec("ping " + strGateway);
+                        process = getRuntime().exec("ping " + strGateway);
                         thread_stdout  = new Thread(new Runnable() {
+                            @RequiresApi(api = Build.VERSION_CODES.O)
                             @Override
                             public void run() {
                                 BufferedReader bufferedReader_stdin = null;
@@ -91,12 +92,17 @@ class WifiReceiver extends BroadcastReceiver {
                                     bufferedReader_stderr = new BufferedReader(new InputStreamReader(process.getErrorStream(), "gbk"));
                                     String line1 = null;
                                     String line2 = null;
-                                    while (flag[0] ) {
+
+                                    while (true) {
                                         if ((line1 = bufferedReader_stdin.readLine()) != null) {
                                             Log.e(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + " stdout:"+line1);
                                         }
                                         if ((line2 = bufferedReader_stderr.readLine()) != null) {
                                             Log.e(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + " error :"+line2);
+                                        }
+                                        if (Thread.interrupted()) {
+                                            Log.e(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + " 获取打印的线程结束！！！");
+                                            break;
                                         }
                                     }
                                     bufferedReader_stdin.close();
@@ -112,11 +118,12 @@ class WifiReceiver extends BroadcastReceiver {
                             @Override
                             public void run() {
                                 try {
-                                    Log.e(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + " exit!");
+                                    Log.e(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + " 等待线程结束!");
                                     process.waitFor();
-                                    Log.e(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + " exit!");
-                                    flag[0] = false;
+                                    process = null;
+                                    Log.e(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + " 线程结束");
                                     isRunPingFlag = false;
+                                    thread_stdout.interrupt();
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
@@ -153,7 +160,10 @@ class WifiReceiver extends BroadcastReceiver {
             WifiInfo wifiInfo = intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
             String bssid = intent.getStringExtra(WifiManager.EXTRA_BSSID);
 
-
+            if (null != process && null == bssid && networkInfo.getState() == NetworkInfo.State.DISCONNECTED) {
+                Log.e(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + " 执行destory函数!");
+                process.destroy();
+            }
 
             Log.i(TAG, "网络状态(NETWORK_STATE_CHANGED_ACTION), " + networkInfo.getState() + "。 bssid: " + bssid);
         } else if (ConnectivityManager.CONNECTIVITY_ACTION.equals(action)) {

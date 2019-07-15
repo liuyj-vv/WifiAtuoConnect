@@ -52,25 +52,6 @@ public class WifiAutoConnectService extends Service {
         unregisterReceiver(wifiReceiver);
     }
 
-    private void wifiAutoConnect() {
-        WifiManager wifiManager = (WifiManager) getBaseContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        if (!wifiManager.isWifiEnabled()) {
-            wifiManager.setWifiEnabled(true);
-            return;
-        } else {
-            WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-            Log.d(TAG, "wifiInfo: " + wifiInfo);
-            if (null != wifiInfo && !wifiInfo.getSSID().equals("test991")) {
-                int netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, "test991", "123456789", 2));
-                Log.d(TAG, "netId: " + netId);
-                boolean enable = wifiManager.enableNetwork(netId, true);
-                Log.d(TAG, "enable: " + enable);
-                boolean reconnect = wifiManager.reconnect();
-                Log.d(TAG, "reconnect: " + reconnect);
-            }
-        }
-    }
-
     private void wifiRegister(){
         wifiReceiver = new WifiReceiver();
         IntentFilter filter = new IntentFilter();
