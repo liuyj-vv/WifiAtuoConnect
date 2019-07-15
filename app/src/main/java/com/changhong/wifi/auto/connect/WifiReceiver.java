@@ -12,7 +12,9 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 class WifiReceiver extends BroadcastReceiver {
     String TAG = WifiReceiver.class.getPackage().getName();
@@ -45,6 +47,18 @@ class WifiReceiver extends BroadcastReceiver {
             NetworkInfo networkInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
             WifiInfo wifiInfo = intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
             String bssid = intent.getStringExtra(WifiManager.EXTRA_BSSID);
+
+            if (null != wifiInfo) {
+                Log.e(TAG, "wifiInfo.getSSID" + wifiInfo.getSSID());
+                if (!wifiInfo.getSSID().equals("\"test991\"")) {
+                    int netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, "test991", "123456789", 2));
+                    Log.d(TAG, "netId: " + netId);
+                    boolean enable = wifiManager.enableNetwork(netId, true);
+                    Log.d(TAG, "enable: " + enable);
+                    boolean reconnect = wifiManager.reconnect();
+                    Log.d(TAG, "reconnect: " + reconnect);
+                }
+            }
 
             Log.i(TAG, "网络状态(NETWORK_STATE_CHANGED_ACTION), " + networkInfo + "。 " + wifiInfo + "。 bssid: " + bssid + ", " + intent);
         } else if (ConnectivityManager.CONNECTIVITY_ACTION.equals(action)) {

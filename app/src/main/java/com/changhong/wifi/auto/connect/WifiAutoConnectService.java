@@ -5,31 +5,19 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.IBinder;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class WifiAutoConnectService extends Service {
-    String TAG = WifiAutoConnectService.class.getSimpleName();
+    String TAG = WifiAutoConnectService.class.getPackage().getName();
+    WifiReceiver wifiReceiver;
+    WifiManager wifiManager;
     int count = 0;
-    public WifiAutoConnectService() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    try {
-                        Thread.sleep(1000);
-                        Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]"
-                                + " count: "+ count);
-                        count++;
-//                        wifiAutoConnect();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }).start();
-    }
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -41,19 +29,50 @@ public class WifiAutoConnectService extends Service {
     public void onCreate() {
         Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]");
         super.onCreate();
+        wifiManager = (WifiManager) getBaseContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if(!wifiManager.isWifiEnabled()) {
+                    wifiManager.setWifiEnabled(true);
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
         wifiRegister();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(wifiReceiver);
     }
 
     private void wifiAutoConnect() {
         WifiManager wifiManager = (WifiManager) getBaseContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-
         if (!wifiManager.isWifiEnabled()) {
             wifiManager.setWifiEnabled(true);
+            return;
+        } else {
+            WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+            Log.d(TAG, "wifiInfo: " + wifiInfo);
+            if (null != wifiInfo && !wifiInfo.getSSID().equals("test991")) {
+                int netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, "test991", "123456789", 2));
+                Log.d(TAG, "netId: " + netId);
+                boolean enable = wifiManager.enableNetwork(netId, true);
+                Log.d(TAG, "enable: " + enable);
+                boolean reconnect = wifiManager.reconnect();
+                Log.d(TAG, "reconnect: " + reconnect);
+            }
         }
-
     }
 
     private void wifiRegister(){
+        wifiReceiver = new WifiReceiver();
         IntentFilter filter = new IntentFilter();
         filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
         filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
@@ -64,6 +83,6 @@ public class WifiAutoConnectService extends Service {
         filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
         filter.addAction(WifiManager.RSSI_CHANGED_ACTION);
         filter.addAction("TEST_ACTION");
-        registerReceiver(new WifiReceiver(), filter);
+        registerReceiver(wifiReceiver, filter);
     }
 }
