@@ -1,6 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
+    signingConfigs {
+        debug {
+            storeFile file('F:\\chNet\\sign_hisi\\keystore\\out.keystore')
+            storePassword '12345678'
+            keyPassword '12345678'
+            keyAlias = 'hisi'
+        }
+    }
     compileSdkVersion 28
     defaultConfig {
         applicationId "com.changhong.wifi.auto.connect"
