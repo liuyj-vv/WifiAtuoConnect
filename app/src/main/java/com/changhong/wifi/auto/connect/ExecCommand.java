@@ -6,6 +6,7 @@ import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -33,7 +34,6 @@ public class ExecCommand {
                 BufferedReader bf = new BufferedReader(reader);
                 String line = null;
                 try {
-
                     while((line=bf.readLine())!=null) {
                         Log.e(TAG, tag + " " + process + ": " + line);
                         writeLineToFile("/mnt/sda/sda1/ch_auto_test_result.txt", line+"\n");
@@ -46,8 +46,14 @@ public class ExecCommand {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    private static boolean writeLineToFile(String pathname, String line) {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(pathname, true))){
+    private boolean writeLineToFile(String pathName, String line) {
+        File file = new File(pathName);
+        if (!file.exists()) {
+            Log.i(TAG, "保存文件 "+ pathName +" 不存在!");
+            return false;
+        }
+
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(pathName, true))){
             bw.write(line);
         } catch (IOException e) {
             e.printStackTrace();

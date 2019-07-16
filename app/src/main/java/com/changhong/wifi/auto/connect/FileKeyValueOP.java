@@ -2,17 +2,28 @@ package com.changhong.wifi.auto.connect;
 
 import android.os.Build;
 import android.support.annotation.RequiresApi;
+import android.util.Log;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
 public class FileKeyValueOP {
+    private static String TAG = FileKeyValueOP.class.getPackage().getName();
+
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     static String readFileKeyValue(String pathName, String key, String defValue) {
         String line;
         String strKey;
         String strValue;    // 返回 defValue 表示失败
+
+        File file = new File(pathName);
+        if (!file.exists()) {
+            Log.i(TAG, "文件 "+ pathName +" 不存在");
+            return defValue;
+        }
+
         try (FileReader reader = new FileReader(pathName);
              BufferedReader br = new BufferedReader(reader) // 建立一个对象，它把文件内容转成计算机能读懂的语言
         ) {
