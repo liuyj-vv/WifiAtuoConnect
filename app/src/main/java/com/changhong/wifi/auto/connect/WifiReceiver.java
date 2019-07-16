@@ -29,17 +29,7 @@ class WifiReceiver extends BroadcastReceiver {
     String TAG = WifiReceiver.class.getPackage().getName();
     WifiManager wifiManager;
     ConnectivityManager connectivityManager;
-
-    String configFile = "/mnt/sda/sda1/ch_auto_test_wifi.cfg";
-    String logFile =  "/mnt/sda/sda1/ch_auto_test_result.txt";
-    boolean readFlagOk = true;
-    String wifiType;
-    String ssid;
-    String passwd;
-
-    boolean isRunPingFlag = false;
-    Process process = null;
-
+    static WifiAutoConnectHelper wifiAutoConnectHelper = null;
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
@@ -49,48 +39,8 @@ class WifiReceiver extends BroadcastReceiver {
         wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         connectivityManager = (ConnectivityManager) context.getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
 
-        wifiType = FileKeyValueOP.readFileKeyValue(configFile, "wifiType", "");
-        ssid = FileKeyValueOP.readFileKeyValue(configFile, "ssid", "");
-        passwd = FileKeyValueOP.readFileKeyValue(configFile, "passwd", "");
-        if (wifiType.equals("") || ssid.equals("")) {
-            readFlagOk = false;
-        } else {
-            readFlagOk = true;
-        }
-
-        if (true == readFlagOk) {
-
-            WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-            if (null != wifiInfo && null != wifiInfo.getSSID()) {
-                if (!wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
-                    Log.e(TAG, "重新连接指定wifi: " + wifiInfo.getSSID() +"---->"+ ssid);
-                    int netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, Integer.parseInt(wifiType)));
-                    boolean enable = wifiManager.enableNetwork(netId, true);
-                    boolean reconnect = wifiManager.reconnect();
-                }
-            }
-
-            String strGateway = Utils.hisiIpLongToString(wifiManager.getDhcpInfo().gateway);
-            if (!strGateway.equals("000.000.000.000") && false == isRunPingFlag && null ==process) {
-                Log.e(TAG, "指定wifi(" + ssid + ")获取到ip，进行ping测试");
-                ExecCommand execCommand = new ExecCommand();
-                process = execCommand.run("ping " + strGateway);
-                execCommand.printMessage(process.getInputStream(), "stdout");
-                execCommand.printMessage(process.getErrorStream(), "stderr");
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            process.waitFor();
-                            process = null;
-                            isRunPingFlag = false;
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }).start();
-            }
-
+        if (null == wifiAutoConnectHelper) {
+            wifiAutoConnectHelper = new WifiAutoConnectHelper();
         }
 
         if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) { // 这个监听wifi的打开与关闭，与wifi的连接无关
@@ -102,14 +52,16 @@ class WifiReceiver extends BroadcastReceiver {
             //扫描到一个热点, 并且此热点达可用状态 会触发此广播
             //你可以从intent中取出一个boolean值; 如果此值为true, 代表着扫描热点已完全成功; 为false, 代表此次扫描不成功, ScanResult 距离上次扫描并未得到更新;
             List<ScanResult> scanResultList = wifiManager.getScanResults();
-            for (int i=0; i<scanResultList.size(); i++) {
-//                Log.i(TAG,  "SSID: " + scanResultList.get(i).SSID + ", capabilities:  " + scanResultList.get(i).capabilities);
+            if (null != wifiAutoConnectHelper) {
+                wifiAutoConnectHelper.autoConnect(wifiManager, scanResultList);
             }
             Log.i(TAG, "扫描结果(SCAN_RESULTS_AVAILABLE_ACTION) ");
         } else if (WifiManager.SUPPLICANT_STATE_CHANGED_ACTION.equals(action)) {
             SupplicantState supplicantState = intent.getParcelableExtra(WifiManager.EXTRA_NEW_STATE); //// 获取当前网络新状态.
             int error = intent.getIntExtra(WifiManager.EXTRA_SUPPLICANT_ERROR, 0);      //// 获取当前网络连接状态码.
-
+            if (null != wifiAutoConnectHelper && supplicantState == SupplicantState.COMPLETED) {
+                wifiAutoConnectHelper.startPingTest(wifiManager);
+            }
             Log.i(TAG, "连接验证(SUPPLICANT_STATE_CHANGED_ACTION): " + supplicantState + ", error: " + error);
         } else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
             //这三个方法能够获取手机当前连接的Wifi信息，注意在wifi断开时Intent中不包含WifiInfo对象，却包含bssid。
@@ -117,9 +69,9 @@ class WifiReceiver extends BroadcastReceiver {
             WifiInfo wifiInfo = intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
             String bssid = intent.getStringExtra(WifiManager.EXTRA_BSSID);
 
-            if (null != process && null == bssid && networkInfo.getState() == NetworkInfo.State.DISCONNECTED) {
+            if (null != wifiAutoConnectHelper && null == bssid && networkInfo.getState() == NetworkInfo.State.DISCONNECTED) {
                 Log.e(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + " 执行destory函数!");
-                process.destroy();
+                wifiAutoConnectHelper.execCommand.destroy();
             }
 
             Log.i(TAG, "网络状态(NETWORK_STATE_CHANGED_ACTION), " + networkInfo.getState() + "。 bssid: " + bssid);

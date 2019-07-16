@@ -17,7 +17,6 @@ public class WifiAutoConnectService extends Service {
     String TAG = WifiAutoConnectService.class.getPackage().getName();
     WifiReceiver wifiReceiver;
     WifiManager wifiManager;
-    int count = 0;
 
     @Override
     public IBinder onBind(Intent intent) {
