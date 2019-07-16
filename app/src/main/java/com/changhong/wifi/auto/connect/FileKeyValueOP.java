@@ -61,7 +61,7 @@ public class FileKeyValueOP {
         }
 
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(pathName, true))){
-            bw.write(line);
+            bw.write(line+"\n");
         } catch (IOException e) {
             e.printStackTrace();
             return false;

@@ -15,6 +15,9 @@ public class ExecCommand {
 
     Process process = null;
 
+    String logFile;
+    String log;
+
     Process run(final ProcessBuilder processBuilder) {
         if (null != process) {
             return null;
@@ -28,10 +31,12 @@ public class ExecCommand {
         }
 
         new Thread(new Runnable() {
+            @RequiresApi(api = Build.VERSION_CODES.KITKAT)
             @Override
             public void run() {
                 try {
                     process.waitFor();
+                    FileKeyValueOP.writeAddLineToFile(logFile, Utils.getCurrDate() + ": " + log + "\n");
                     Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 监听程序结束了" + process.exitValue());
                     Thread.sleep(100);
                     process = null;
@@ -42,6 +47,11 @@ public class ExecCommand {
         }).start();
 
         return process;
+    }
+
+    public void exitLog(String logFile, String log) {
+        this.logFile = logFile;
+        this.log = log;
     }
 
     public boolean destroy() {
@@ -70,16 +80,13 @@ public class ExecCommand {
                 BufferedReader bufferedReader = new BufferedReader(reader);
                 String line = null;
                 try {
-                    while(null != (line=bufferedReader.readLine()) && null != process) {
+                    while(null != (line = bufferedReader.readLine()) && null != process) {
                         Log.e(TAG, tag + " " + process + ": " + line);
-                        FileKeyValueOP.writeAddLineToFile("/mnt/sda/sda1/ch_auto_test_result.txt", line+"\n");
+                        FileKeyValueOP.writeAddLineToFile("/mnt/sda/sda1/ch_auto_test_result.txt", line);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-
-                Log.e(TAG, tag + " " + process + ": " + "打印退出！");
-
             }
         }).start();
     }

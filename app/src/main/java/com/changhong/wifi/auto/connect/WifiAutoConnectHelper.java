@@ -9,6 +9,7 @@ import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
+import java.util.Date;
 import java.util.List;
 
 public class WifiAutoConnectHelper {
@@ -87,7 +88,10 @@ public class WifiAutoConnectHelper {
                 if (wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
                     String strGateway = Utils.ipMultipleStringToSignleString(Utils.hisiIpLongToString(wifiManager.getDhcpInfo().gateway));
                     if (!strGateway.equals("0.0.0.0") && !execCommand.isRuning()) {
-                        Log.e(TAG, "指定wifi(" + ssid + ")获取到ip，进行ping测试: " + strGateway);
+                        Log.e(TAG, "指定wifi(" + ssid + ")获取到ip，"+Utils.getCurrDate()+ ": ping " + strGateway);
+                        FileKeyValueOP.writeAddLineToFile(logFile, Utils.getCurrDate() + ": start ping " + strGateway);
+                        execCommand.exitLog(logFile, "end ping " + strGateway);
+//                        ProcessBuilder processBuilder = new ProcessBuilder("sh", "-c", "ping " + strGateway + " > " + " /mnt/sda/sda1/ch_auto_test_result.txt");
                         ProcessBuilder processBuilder = new ProcessBuilder("ping", strGateway);
                         process = execCommand.run(processBuilder);
                         execCommand.printMessage(process.getInputStream(), "stdout");
