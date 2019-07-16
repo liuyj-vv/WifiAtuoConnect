@@ -39,7 +39,11 @@ public class WifiAutoConnectHelper {
         if (null == scanResultList) {
             scanResultList = wifiManager.getScanResults();
             if (null == scanResultList) {
-                isMachOk = true;
+                Log.e(TAG, "scanResultList为空，连接" + "---->"+ ssid + ", wifiType:" + wifiType);
+                int netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, Integer.parseInt(wifiType)));
+                boolean enable = wifiManager.enableNetwork(netId, true);
+                boolean reconnect = wifiManager.reconnect();
+                return true;
             }
         }
 
@@ -58,7 +62,7 @@ public class WifiAutoConnectHelper {
             WifiInfo wifiInfo = wifiManager.getConnectionInfo();
             if (null != wifiInfo && null != wifiInfo.getSSID()) {
                 if (!wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
-                    Log.e(TAG, "重新连接指定wifi: " + wifiInfo.getSSID() +"---->"+ ssid);
+                    Log.e(TAG, "重新连接指定wifi: " + wifiInfo.getSSID() +"---->"+ ssid + ", wifiType:" + wifiType);
                     int netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, Integer.parseInt(wifiType)));
                     boolean enable = wifiManager.enableNetwork(netId, true);
                     boolean reconnect = wifiManager.reconnect();
@@ -73,7 +77,6 @@ public class WifiAutoConnectHelper {
     public boolean startPingTest(WifiManager wifiManager) {
         wifiType = FileKeyValueOP.readFileKeyValue(configFile, "wifiType", "");
         ssid = FileKeyValueOP.readFileKeyValue(configFile, "ssid", "");
-        Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]");
 
         if (wifiType.equals("") || ssid.equals("")) {
             Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]");
@@ -82,12 +85,11 @@ public class WifiAutoConnectHelper {
             WifiInfo wifiInfo = wifiManager.getConnectionInfo();
             if (null != wifiInfo && null != wifiInfo.getSSID()) {
                 if (wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
-                    String strGateway = Utils.hisiIpLongToString(wifiManager.getDhcpInfo().gateway);
-                    if (!strGateway.equals("000.000.000.000") && !execCommand.isRuning()) {
-                        Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]");
-
-                        Log.e(TAG, "指定wifi(" + ssid + ")获取到ip，进行ping测试");
-                        process = execCommand.run("ping " + strGateway);
+                    String strGateway = Utils.ipMultipleStringToSignleString(Utils.hisiIpLongToString(wifiManager.getDhcpInfo().gateway));
+                    if (!strGateway.equals("0.0.0.0") && !execCommand.isRuning()) {
+                        Log.e(TAG, "指定wifi(" + ssid + ")获取到ip，进行ping测试: " + strGateway);
+                        ProcessBuilder processBuilder = new ProcessBuilder("ping", strGateway);
+                        process = execCommand.run(processBuilder);
                         execCommand.printMessage(process.getInputStream(), "stdout");
                         execCommand.printMessage(process.getErrorStream(), "stderr");
                         return true;

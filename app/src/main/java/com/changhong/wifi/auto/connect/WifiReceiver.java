@@ -46,7 +46,7 @@ class WifiReceiver extends BroadcastReceiver {
         if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) { // 这个监听wifi的打开与关闭，与wifi的连接无关
             int wifiState = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN);//当前的状态
             int wifiPreviousState =  intent.getIntExtra(WifiManager.EXTRA_PREVIOUS_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN);//之前的状态
-
+            wifiAutoConnectHelper.autoConnect(wifiManager, null);
             Log.i(TAG, "硬件状态(WIFI_STATE_CHANGED_ACTION): " + wifiState);
         } else if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(action)) {
             //扫描到一个热点, 并且此热点达可用状态 会触发此广播
@@ -54,11 +54,16 @@ class WifiReceiver extends BroadcastReceiver {
             List<ScanResult> scanResultList = wifiManager.getScanResults();
             if (null != wifiAutoConnectHelper) {
                 wifiAutoConnectHelper.autoConnect(wifiManager, scanResultList);
+                wifiAutoConnectHelper.startPingTest(wifiManager);
             }
             Log.i(TAG, "扫描结果(SCAN_RESULTS_AVAILABLE_ACTION) ");
         } else if (WifiManager.SUPPLICANT_STATE_CHANGED_ACTION.equals(action)) {
             SupplicantState supplicantState = intent.getParcelableExtra(WifiManager.EXTRA_NEW_STATE); //// 获取当前网络新状态.
             int error = intent.getIntExtra(WifiManager.EXTRA_SUPPLICANT_ERROR, 0);      //// 获取当前网络连接状态码.
+
+            if (supplicantState == SupplicantState.COMPLETED) {
+                wifiAutoConnectHelper.autoConnect(wifiManager, null);
+            }
             Log.i(TAG, "连接验证(SUPPLICANT_STATE_CHANGED_ACTION): " + supplicantState + ", error: " + error);
         } else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
             //这三个方法能够获取手机当前连接的Wifi信息，注意在wifi断开时Intent中不包含WifiInfo对象，却包含bssid。

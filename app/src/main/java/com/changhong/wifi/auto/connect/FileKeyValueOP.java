@@ -50,9 +50,13 @@ public class FileKeyValueOP {
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     public static boolean writeAddLineToFile(String pathName, String line) {
-        File file = new File(pathName);
+
+        int start = pathName.lastIndexOf("/");
+        String path = pathName.substring(0, start);
+
+        File file = new File(path);
         if (!file.exists()) {
-            Log.i(TAG, "保存文件 "+ pathName +" 不存在!");
+            Log.i(TAG, "保存路径 "+ path +" 不存在!");
             return false;
         }
 

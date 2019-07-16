@@ -15,13 +15,13 @@ public class ExecCommand {
 
     Process process = null;
 
-    Process run(String cmd) {
+    Process run(final ProcessBuilder processBuilder) {
         if (null != process) {
             return null;
         }
 
         try {
-            process = Runtime.getRuntime().exec(cmd);
+            process = processBuilder.start();
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -32,6 +32,8 @@ public class ExecCommand {
             public void run() {
                 try {
                     process.waitFor();
+                    Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 监听程序结束了" + process.exitValue());
+                    Thread.sleep(100);
                     process = null;
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -75,6 +77,9 @@ public class ExecCommand {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+
+                Log.e(TAG, tag + " " + process + ": " + "打印退出！");
+
             }
         }).start();
     }
