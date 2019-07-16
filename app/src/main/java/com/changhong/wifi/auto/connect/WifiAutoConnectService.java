@@ -33,11 +33,13 @@ public class WifiAutoConnectService extends Service {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                if(!wifiManager.isWifiEnabled()) {
-                    wifiManager.setWifiEnabled(true);
-                }
                 try {
-                    Thread.sleep(1000);
+                    while (true) {
+                        if(!wifiManager.isWifiEnabled()) {
+                            wifiManager.setWifiEnabled(true);
+                        }
+                        Thread.sleep(1000);
+                    }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

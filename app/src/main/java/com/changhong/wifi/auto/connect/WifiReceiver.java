@@ -45,7 +45,6 @@ class WifiReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
-        final Thread thread_stdout;
 
         wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         connectivityManager = (ConnectivityManager) context.getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -55,85 +54,43 @@ class WifiReceiver extends BroadcastReceiver {
         passwd = FileKeyValueOP.readFileKeyValue(configFile, "passwd", "");
         if (wifiType.equals("") || ssid.equals("")) {
             readFlagOk = false;
+        } else {
+            readFlagOk = true;
         }
-
-
 
         if (true == readFlagOk) {
 
             WifiInfo wifiInfo = wifiManager.getConnectionInfo();
             if (null != wifiInfo && null != wifiInfo.getSSID()) {
-//                Log.e(TAG, "wifiInfo.getSSID" + wifiInfo.getSSID());
                 if (!wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
+                    Log.e(TAG, "重新连接指定wifi: " + wifiInfo.getSSID() +"---->"+ ssid);
                     int netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, Integer.parseInt(wifiType)));
                     boolean enable = wifiManager.enableNetwork(netId, true);
-//                    Log.d(TAG, "enable: " + enable);
                     boolean reconnect = wifiManager.reconnect();
-//                    Log.d(TAG, "reconnect: " + reconnect);
                 }
             }
-//            Log.d(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + "ssid: " + ssid + ", passwd: " + passwd + ", wifiType: " + wifiType + ", isRunPingFlag: " + isRunPingFlag);
 
-            if (connectivityManager.getActiveNetworkInfo().isConnected()) {
-                try {
-                    String strGateway = Utils.hisiIpLongToString(wifiManager.getDhcpInfo().gateway);
-                    //Log.e(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + " strGateway: "+ strGateway);
-                    if (!strGateway.equals("000.000.000.000") && true != isRunPingFlag) {
-                        isRunPingFlag = true;
-                        process = getRuntime().exec("ping " + strGateway);
-                        thread_stdout  = new Thread(new Runnable() {
-                            @RequiresApi(api = Build.VERSION_CODES.O)
-                            @Override
-                            public void run() {
-                                BufferedReader bufferedReader_stdin = null;
-                                BufferedReader bufferedReader_stderr = null;
-                                try {
-                                    bufferedReader_stdin = new BufferedReader(new InputStreamReader(process.getInputStream(), "gbk"));
-                                    bufferedReader_stderr = new BufferedReader(new InputStreamReader(process.getErrorStream(), "gbk"));
-                                    String line1 = null;
-                                    String line2 = null;
-
-                                    while (true) {
-                                        if ((line1 = bufferedReader_stdin.readLine()) != null) {
-                                            Log.e(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + " stdout:"+line1);
-                                        }
-                                        if ((line2 = bufferedReader_stderr.readLine()) != null) {
-                                            Log.e(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + " error :"+line2);
-                                        }
-                                        if (Thread.interrupted()) {
-                                            Log.e(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + " 获取打印的线程结束！！！");
-                                            break;
-                                        }
-                                    }
-                                    bufferedReader_stdin.close();
-                                    bufferedReader_stderr.close();
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        });
-                        thread_stdout.start();
-
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    Log.e(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + " 等待线程结束!");
-                                    process.waitFor();
-                                    process = null;
-                                    Log.e(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + " 线程结束");
-                                    isRunPingFlag = false;
-                                    thread_stdout.interrupt();
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }).start();
+            String strGateway = Utils.hisiIpLongToString(wifiManager.getDhcpInfo().gateway);
+            if (!strGateway.equals("000.000.000.000") && false == isRunPingFlag && null ==process) {
+                Log.e(TAG, "指定wifi(" + ssid + ")获取到ip，进行ping测试");
+                ExecCommand execCommand = new ExecCommand();
+                process = execCommand.run("ping " + strGateway);
+                execCommand.printMessage(process.getInputStream(), "stdout");
+                execCommand.printMessage(process.getErrorStream(), "stderr");
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            process.waitFor();
+                            process = null;
+                            isRunPingFlag = false;
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
-                }catch (IOException e) {
-                    e.printStackTrace();
-                }
+                }).start();
             }
+
         }
 
         if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) { // 这个监听wifi的打开与关闭，与wifi的连接无关
@@ -148,7 +105,7 @@ class WifiReceiver extends BroadcastReceiver {
             for (int i=0; i<scanResultList.size(); i++) {
 //                Log.i(TAG,  "SSID: " + scanResultList.get(i).SSID + ", capabilities:  " + scanResultList.get(i).capabilities);
             }
-            Log.i(TAG, "扫描结果(SCAN_RESULTS_AVAILABLE_ACTION) "  + intent);
+            Log.i(TAG, "扫描结果(SCAN_RESULTS_AVAILABLE_ACTION) ");
         } else if (WifiManager.SUPPLICANT_STATE_CHANGED_ACTION.equals(action)) {
             SupplicantState supplicantState = intent.getParcelableExtra(WifiManager.EXTRA_NEW_STATE); //// 获取当前网络新状态.
             int error = intent.getIntExtra(WifiManager.EXTRA_SUPPLICANT_ERROR, 0);      //// 获取当前网络连接状态码.
