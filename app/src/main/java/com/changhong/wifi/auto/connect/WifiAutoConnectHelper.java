@@ -36,15 +36,23 @@ public class WifiAutoConnectHelper {
         }
 
         isMachOk = false;
-        if (true == isReadFlagOk) {
+        if (null == scanResultList) {
+            scanResultList = wifiManager.getScanResults();
+            if (null == scanResultList) {
+                isMachOk = true;
+            }
+        }
+
+        if (true == isReadFlagOk && null != scanResultList) {
             for (int i=0; i<scanResultList.size(); i++) {
-//                Log.i(TAG,  "SSID: " + scanResultList.get(i).SSID + ", capabilities:  " + scanResultList.get(i).capabilities);
                 if (scanResultList.get(i).SSID.equals(ssid)) {
                     isMachOk = true;
                     break;
                 }
             }
         }
+
+//        Log.e(TAG, "重新连接指定wifi" +wifiType +" "+ ssid +" "+ passwd);
 
         if (true == isMachOk) {
             WifiInfo wifiInfo = wifiManager.getConnectionInfo();
@@ -54,33 +62,39 @@ public class WifiAutoConnectHelper {
                     int netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, Integer.parseInt(wifiType)));
                     boolean enable = wifiManager.enableNetwork(netId, true);
                     boolean reconnect = wifiManager.reconnect();
+                    return true;
                 }
             }
         }
-        return true;
+        return false;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     public boolean startPingTest(WifiManager wifiManager) {
         wifiType = FileKeyValueOP.readFileKeyValue(configFile, "wifiType", "");
         ssid = FileKeyValueOP.readFileKeyValue(configFile, "ssid", "");
+        Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]");
 
         if (wifiType.equals("") || ssid.equals("")) {
+            Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]");
             return false;
         } else {
             WifiInfo wifiInfo = wifiManager.getConnectionInfo();
             if (null != wifiInfo && null != wifiInfo.getSSID()) {
-                if (!wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
+                if (wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
                     String strGateway = Utils.hisiIpLongToString(wifiManager.getDhcpInfo().gateway);
                     if (!strGateway.equals("000.000.000.000") && !execCommand.isRuning()) {
+                        Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]");
+
                         Log.e(TAG, "指定wifi(" + ssid + ")获取到ip，进行ping测试");
                         process = execCommand.run("ping " + strGateway);
                         execCommand.printMessage(process.getInputStream(), "stdout");
                         execCommand.printMessage(process.getErrorStream(), "stderr");
+                        return true;
                     }
                 }
             }
         }
-        return true;
+        return false;
     }
 }

@@ -59,9 +59,6 @@ class WifiReceiver extends BroadcastReceiver {
         } else if (WifiManager.SUPPLICANT_STATE_CHANGED_ACTION.equals(action)) {
             SupplicantState supplicantState = intent.getParcelableExtra(WifiManager.EXTRA_NEW_STATE); //// 获取当前网络新状态.
             int error = intent.getIntExtra(WifiManager.EXTRA_SUPPLICANT_ERROR, 0);      //// 获取当前网络连接状态码.
-            if (null != wifiAutoConnectHelper && supplicantState == SupplicantState.COMPLETED) {
-                wifiAutoConnectHelper.startPingTest(wifiManager);
-            }
             Log.i(TAG, "连接验证(SUPPLICANT_STATE_CHANGED_ACTION): " + supplicantState + ", error: " + error);
         } else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
             //这三个方法能够获取手机当前连接的Wifi信息，注意在wifi断开时Intent中不包含WifiInfo对象，却包含bssid。
@@ -72,6 +69,13 @@ class WifiReceiver extends BroadcastReceiver {
             if (null != wifiAutoConnectHelper && null == bssid && networkInfo.getState() == NetworkInfo.State.DISCONNECTED) {
                 Log.e(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + " 执行destory函数!");
                 wifiAutoConnectHelper.execCommand.destroy();
+            }
+
+            if (null != wifiAutoConnectHelper && networkInfo.getState() == NetworkInfo.State.CONNECTED) {
+                Log.e(TAG, "LINE["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]" + "执行ping测试");
+                if (!wifiAutoConnectHelper.autoConnect(wifiManager, null)) {
+                    wifiAutoConnectHelper.startPingTest(wifiManager);
+                }
             }
 
             Log.i(TAG, "网络状态(NETWORK_STATE_CHANGED_ACTION), " + networkInfo.getState() + "。 bssid: " + bssid);
