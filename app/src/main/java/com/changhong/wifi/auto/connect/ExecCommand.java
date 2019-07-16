@@ -36,7 +36,7 @@ public class ExecCommand {
                 try {
                     while((line=bf.readLine())!=null) {
                         Log.e(TAG, tag + " " + process + ": " + line);
-                        writeLineToFile("/mnt/sda/sda1/ch_auto_test_result.txt", line+"\n");
+                        FileKeyValueOP.writeAddLineToFile("/mnt/sda/sda1/ch_auto_test_result.txt", line+"\n");
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -45,21 +45,6 @@ public class ExecCommand {
         }).start();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    private boolean writeLineToFile(String pathName, String line) {
-        File file = new File(pathName);
-        if (!file.exists()) {
-            Log.i(TAG, "保存文件 "+ pathName +" 不存在!");
-            return false;
-        }
 
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(pathName, true))){
-            bw.write(line);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-        return true;
-    }
 
 }
