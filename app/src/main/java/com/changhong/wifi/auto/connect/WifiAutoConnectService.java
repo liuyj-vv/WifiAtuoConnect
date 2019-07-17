@@ -26,6 +26,7 @@ public class WifiAutoConnectService extends Service {
 
     @Override
     public void onCreate() {
+
         Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]");
         super.onCreate();
         wifiManager = (WifiManager) getBaseContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
@@ -33,11 +34,18 @@ public class WifiAutoConnectService extends Service {
             @Override
             public void run() {
                 try {
+                    int count = 0;
                     while (true) {
                         if(!wifiManager.isWifiEnabled()) {
                             wifiManager.setWifiEnabled(true);
                         }
-                        Thread.sleep(1000);
+                        Thread.sleep(10);
+                        count ++;
+                        if (1 == count%2) {
+                            LedControl.ledCtrl(1, "ir");
+                        } else {
+                            LedControl.ledCtrl(0, "ir");
+                        }
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();

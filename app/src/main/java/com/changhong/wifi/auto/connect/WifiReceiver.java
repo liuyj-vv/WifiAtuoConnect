@@ -61,7 +61,7 @@ class WifiReceiver extends BroadcastReceiver {
             SupplicantState supplicantState = intent.getParcelableExtra(WifiManager.EXTRA_NEW_STATE); //// 获取当前网络新状态.
             int error = intent.getIntExtra(WifiManager.EXTRA_SUPPLICANT_ERROR, 0);      //// 获取当前网络连接状态码.
 
-            if (supplicantState == SupplicantState.COMPLETED) {
+            if (supplicantState == SupplicantState.COMPLETED && supplicantState == SupplicantState.DISCONNECTED) {
                 wifiAutoConnectHelper.autoConnect(wifiManager, null);
             }
             Log.i(TAG, "连接验证(SUPPLICANT_STATE_CHANGED_ACTION): " + supplicantState + ", error: " + error);

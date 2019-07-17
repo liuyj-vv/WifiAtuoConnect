@@ -15,8 +15,8 @@ public class ExecCommand {
 
     Process process = null;
 
-    String logFile;
-    String log;
+    String logFile = "";
+    String log = "";
 
     Process run(final ProcessBuilder processBuilder) {
         if (null != process) {
@@ -37,8 +37,8 @@ public class ExecCommand {
                 try {
                     process.waitFor();
                     FileKeyValueOP.writeAddLineToFile(logFile, Utils.getCurrDate() + ": " + log + "\n");
-                    Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 监听程序结束了" + process.exitValue());
-                    Thread.sleep(100);
+                    Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 监听程序结束了");
+                    Thread.sleep(50);
                     process = null;
                 } catch (InterruptedException e) {
                     e.printStackTrace();
