@@ -39,9 +39,9 @@ public class LedControl {
             if (!response.isSuccessful()) {
                 Log.i(TAG, "----------ledCtrl----- fail");
             }
+            response.close();
         }
-        catch(Exception e)
-        {
+        catch(Exception e) {
             e.printStackTrace();
         }
     }
