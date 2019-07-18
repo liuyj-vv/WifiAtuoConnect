@@ -13,7 +13,7 @@ public class LedControl {
     static String TAG = LedControl.class.getPackage().getName();
     public static void ledCtrl(int status,String type)
     {
-        Log.i(TAG, "status: "+ status +", type: " + type);
+//        Log.i(TAG, "status: "+ status +", type: " + type);
 
         JSONObject jsonObject = new JSONObject();
         try {

@@ -34,21 +34,37 @@ public class WifiAutoConnectService extends Service {
             @Override
             public void run() {
                 try {
-                    int count = 0;
                     while (true) {
                         if(!wifiManager.isWifiEnabled()) {
                             wifiManager.setWifiEnabled(true);
                         }
-                        Thread.sleep(10);
+                        Thread.sleep(1000);
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                int count = 0;
+                while (true) {
+                    try {
                         count ++;
+                        //"type": "ir"
+                        //"ir""power""network"....
+                        //仅仅ir可以控制红灯亮灭
                         if (1 == count%2) {
                             LedControl.ledCtrl(1, "ir");
                         } else {
                             LedControl.ledCtrl(0, "ir");
                         }
+                        Thread.sleep(5);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
                 }
             }
         }).start();

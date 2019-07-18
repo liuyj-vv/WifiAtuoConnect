@@ -15,7 +15,7 @@ public class FileKeyValueOP {
     private static String TAG = FileKeyValueOP.class.getPackage().getName();
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    static String readFileKeyValue(String pathName, String key, String defValue) {
+    static boolean readFileKeyValue(String pathName, String key, String[] vaule) {
         String line;
         String strKey;
         String strValue;    // 返回 defValue 表示失败
@@ -23,20 +23,25 @@ public class FileKeyValueOP {
         File file = new File(pathName);
         if (!file.exists()) {
             Log.i(TAG, "文件 "+ pathName +" 不存在");
-            return defValue;
+            return false;
         }
 
         try (FileReader reader = new FileReader(pathName);
              BufferedReader br = new BufferedReader(reader) // 建立一个对象，它把文件内容转成计算机能读懂的语言
         ) {
-            while (null != (line = br.readLine().trim())) { // 一次读入一行数据
+            while (null != (line = br.readLine())) { // 一次读入一行数据
+                line = line.trim();
                 int index = line.indexOf('=');
                 if (-1 != index) {
-                    strKey = line.trim().substring(0, index); // 获取键
+                    strKey = line.substring(0, index); // 获取键
                     if(key.trim().equals(strKey.trim())) { //比较
-                        strValue = line.substring(index+1); // 获取值
-//                        Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]: " + str_after);
-                        return strValue;
+                        strValue = line.substring(index+1).trim(); // 获取值
+                        if (-1 != (index = strValue.indexOf("//"))) {
+                            strValue = strValue.substring(0, index).trim();
+                        }
+                        Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]: " + strValue);
+                        vaule[0] = strValue;
+                        return true;
                     }
                 }
             }
@@ -45,7 +50,7 @@ public class FileKeyValueOP {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return defValue;
+        return false;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
