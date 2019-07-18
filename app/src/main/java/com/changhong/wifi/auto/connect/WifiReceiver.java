@@ -47,9 +47,11 @@ class WifiReceiver extends BroadcastReceiver {
 
             if (WifiManager.WIFI_STATE_ENABLED == wifiState && true == isBootFristRun) {
                 isBootFristRun = false;
-                if (null == wifiManager.getConnectionInfo()) {
-                    wifiAutoConnectHelper.bootFirstConnectWifi(wifiManager);
-                } else if (null != wifiManager.getConnectionInfo() && null == wifiManager.getConnectionInfo().getSSID()){
+                if (null != wifiManager.getConnectionInfo() && null != wifiManager.getConnectionInfo().getSSID()){
+                    //比较ssid，若ssid不同，修改为连接配置文件中的ssid
+                    wifiAutoConnectHelper.bootFirstConnectWifi(wifiManager, wifiManager.getConnectionInfo().getSSID());
+                } else {
+                    //还没有ssid，直接新建连接
                     wifiAutoConnectHelper.bootFirstConnectWifi(wifiManager);
                 }
             }
