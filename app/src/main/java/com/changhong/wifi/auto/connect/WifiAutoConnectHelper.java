@@ -106,27 +106,29 @@ public class WifiAutoConnectHelper {
             Log.e(TAG, "将新的网络描述,使能失败!!!");
             return false;
         }
-//        boolean reconnect = wifiManager.reconnect();
-//        if (reconnect) {
-//            Log.e(TAG, "重新连接新的网络失败!!!");
-//            return false;
-//        }
+        boolean reconnect = wifiManager.reconnect();
+        if (false == reconnect) {
+            Log.e(TAG, "重新连接新的网络失败!!!");
+            return false;
+        }
         return true;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    public boolean bootFirstConnectWifi(WifiManager wifiManager, String ssid) {
+    public boolean bootFirstConnectWifi(WifiManager wifiManager, String currSsid) {
         if(!readConfig()) {
             Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 配置文件读取错误");
             return false;
         }
 
-//        Log.e(TAG, "this.ssid: " + this.ssid + ", ssid" + ssid);
 
-        if (this.ssid.equals(ssid)) {
+        if (this.ssid.equals(currSsid)) {
             Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 要连接的热点是配置文件中的热点，不做修改");
             return false;
         }
+
+        Log.e(TAG, "this.ssid: " + this.ssid + ", currSsid: " + currSsid);
+
 
         Log.e(TAG, "wifi连接到配置文件指定的热点 2, " + "ssid： " + ssid +  ", wifiType:" + wifiType);
         int netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, Integer.parseInt(wifiType)));
@@ -140,11 +142,13 @@ public class WifiAutoConnectHelper {
             Log.e(TAG, "将新的网络描述,使能失败!!!");
             return false;
         }
-//        boolean reconnect = wifiManager.reconnect();
-//        if (reconnect) {
-//            Log.e(TAG, "重新连接新的网络失败!!!");
-//            return false;
-//        }
+
+        boolean reconnect = wifiManager.reconnect();
+        if (false == reconnect) {
+            Log.e(TAG, "重新连接新的网络失败!!!");
+            return false;
+        }
+
         return true;
     }
 
