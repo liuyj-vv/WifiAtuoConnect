@@ -46,14 +46,14 @@ class WifiReceiver extends BroadcastReceiver {
         if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) { // 这个监听wifi的打开与关闭，与wifi的连接无关
             int wifiState = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN);//当前的状态
             int wifiPreviousState =  intent.getIntExtra(WifiManager.EXTRA_PREVIOUS_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN);//之前的状态
-            Log.i(TAG, "硬件状态(WIFI_STATE_CHANGED_ACTION): " + intent);
+            Log.i(TAG, "硬件状态(WIFI_STATE_CHANGED_ACTION): " + wifiState);
 
 
 
         } else if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(action)) {
-            //扫描到一个热点, 并且此热点达可用状态 会触发此广播
-            //你可以从intent中取出一个boolean值; 如果此值为true, 代表着扫描热点已完全成功; 为false, 代表此次扫描不成功, ScanResult 距离上次扫描并未得到更新;
-            Log.i(TAG, "扫描结果(SCAN_RESULTS_AVAILABLE_ACTION) " + intent);
+            //扫描到一个热点, 并且此热点达可用状态会触发此广播
+            //你可以从intent中取出一个boolean值; 如果此值为true, 代表着扫描热点已完全成功; 为false, 代表此次扫描不成功, ScanResult 距离上次扫描并未得到更新（可能存在）;
+            Log.i(TAG, "扫描结果(SCAN_RESULTS_AVAILABLE_ACTION) ");
 
         } else if (WifiManager.SUPPLICANT_STATE_CHANGED_ACTION.equals(action)) {
             SupplicantState supplicantState = intent.getParcelableExtra(WifiManager.EXTRA_NEW_STATE); //// 获取当前网络新状态.
@@ -64,11 +64,10 @@ class WifiReceiver extends BroadcastReceiver {
         } else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
             //这三个方法能够获取手机当前连接的Wifi信息，注意在wifi断开时Intent中不包含WifiInfo对象，却包含bssid。
             NetworkInfo networkInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
-            WifiInfo wifiInfo = intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
             String bssid = intent.getStringExtra(WifiManager.EXTRA_BSSID);
+            WifiInfo wifiInfo = intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
+
             Log.i(TAG, "网络状态(NETWORK_STATE_CHANGED_ACTION): " + intent);
-
-
         } else if (ConnectivityManager.CONNECTIVITY_ACTION.equals(action)) {
             //ConnectivityManager.EXTRA_NO_CONNECTIVITY 返回true，代表未连接
             boolean b = intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false);
@@ -78,7 +77,7 @@ class WifiReceiver extends BroadcastReceiver {
 
         } else if (WifiManager.RSSI_CHANGED_ACTION.equals(action)) {
             int rssi = intent.getIntExtra(wifiManager.EXTRA_NEW_RSSI, 0);
-            Log.i(TAG, "信号强度(RSSI_CHANGED_ACTION): " + intent );
+            Log.i(TAG, "信号强度(RSSI_CHANGED_ACTION): " + rssi );
 
 
         } else if("TEST_ACTION".equals(action)) {
