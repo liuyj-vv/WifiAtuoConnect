@@ -86,8 +86,77 @@ public class WifiAutoConnectHelper {
         return true;
     }
 
+
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    public boolean autoConnect(WifiManager wifiManager, List<ScanResult> scanResultList) {
+    public boolean bootFirstConnectWifi(WifiManager wifiManager) {
+        if(!readConfig()) {
+            Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 配置文件读取错误");
+            return false;
+        }
+
+        Log.e(TAG, "wifi连接到配置文件指定的热点, " + "ssid： " + ssid +  ", wifiType:" + wifiType);
+        int netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, Integer.parseInt(wifiType)));
+        if (-1 == netId) {
+            Log.e(TAG, "添加新的网络描述失败!!!");
+            return false;
+        }
+
+        boolean enable = wifiManager.enableNetwork(netId, true); //true连接新的网络
+        if (false == enable) {
+            Log.e(TAG, "将新的网络描述,使能失败!!!");
+            return false;
+        }
+//        boolean reconnect = wifiManager.reconnect();
+//        if (reconnect) {
+//            Log.e(TAG, "重新连接新的网络失败!!!");
+//            return false;
+//        }
+        return true;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    public boolean autoConnect(WifiManager wifiManager) {
+        int index;
+        if(!readConfig()) {
+            Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 配置文件读取错误");
+            return false;
+        }
+
+        List<ScanResult> scanResultList = wifiManager.getScanResults();
+        if (null == scanResultList) {
+            Log.e(TAG, "当前未扫描到可用的wifi!!!");
+            return false;
+        }
+
+        for (index=0; index<scanResultList.size(); index++) {
+            if (ssid == scanResultList.get(index).SSID) {
+                break;
+            }
+        }
+
+        if (scanResultList.size() == index) {
+            Log.e(TAG, "扫描到的可用wifi不存在和配置文件中相同的ssid!!!");
+            return false;
+        }
+
+        Log.e(TAG, "wifi连接到配置文件指定的热点, " + "ssid： " + ssid +  "wifiType:" + wifiType);
+        int netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, Integer.parseInt(wifiType)));
+        if (-1 == netId) {
+            Log.e(TAG, "添加新的网络描述失败!!!");
+            return false;
+        }
+
+        boolean enable = wifiManager.enableNetwork(netId, true); //true连接新的网络
+        if (false == enable) {
+            Log.e(TAG, "将新的网络描述,使能失败!!!");
+            return false;
+        }
+
+        return true;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    public boolean sss(WifiManager wifiManager, List<ScanResult> scanResultList) {
         if(!readConfig()) {
             Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 配置文件读取错误");
             return false;
