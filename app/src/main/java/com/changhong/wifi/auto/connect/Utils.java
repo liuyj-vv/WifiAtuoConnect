@@ -8,7 +8,7 @@ import java.util.Date;
 public class Utils {
     public static String getCurrDate() {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//设置日期格式
-        return simpleDateFormat.format(new Date()); // new Date()为获取当前系统时间
+        return simpleDateFormat.format(new Date()) + ": "; // new Date()为获取当前系统时间
     }
 
     /**

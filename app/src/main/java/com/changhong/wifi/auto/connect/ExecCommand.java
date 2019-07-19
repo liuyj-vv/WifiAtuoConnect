@@ -15,15 +15,17 @@ public class ExecCommand {
 
     Process process = null;
 
-    String logFile = "";
+    String logFilename = "";
     String log = "";
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     Process run(final ProcessBuilder processBuilder) {
         if (null != process) {
             return null;
         }
 
         try {
+            FileKeyValueOP.writeAddLineToFile(logFilename, Utils.getCurrDate() + "[START] " + log);
             process = processBuilder.start();
         } catch (IOException e) {
             e.printStackTrace();
@@ -37,8 +39,8 @@ public class ExecCommand {
                 try {
                     process.waitFor();
                     Thread.sleep(50);
-                    FileKeyValueOP.writeAddLineToFile(logFile, Utils.getCurrDate() + ": " + log + "\n");
-                    Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 监听程序结束了");
+                    FileKeyValueOP.writeAddLineToFile(logFilename, Utils.getCurrDate() + "[END]   " + log + "\n");
+                    Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 一次ping测试结束了");
                     process = null;
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -49,10 +51,11 @@ public class ExecCommand {
         return process;
     }
 
-    public void exitLog(String logFile, String log) {
-        this.logFile = logFile;
-        this.log = log;
+    public void writeLogToFile(String filename, String cmd, String ip, String mac, String frequency) {
+        this.logFilename = filename;
+        this.log = "IP:" + ip + ", AP MAC:" + mac + ", AP frequency:" + frequency + ", cmd:" +cmd;
     }
+
 
     public boolean destroy() {
         if (null != process) {
@@ -72,28 +75,19 @@ public class ExecCommand {
         }
     }
 
-    public void printStdoutMessage(final String tag) {
-        final InputStream input = process.getInputStream();
-        new Thread(new Runnable() {
-            @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-            public void run() {
-                Reader reader = new InputStreamReader(input);
-                BufferedReader bufferedReader = new BufferedReader(reader);
-                String line = null;
-                try {
-                    while(null != (line = bufferedReader.readLine()) && null != process) {
-                        Log.e(TAG, tag + " " + process + ": " + line);
-                        FileKeyValueOP.writeAddLineToFile("/mnt/sda/sda1/ch_auto_test_result.txt", line);
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
+    public void printStdoutMessage(String filename, String tag) {
+        if (null != process) {
+            printMessage(process.getInputStream(), filename, tag);
+        }
     }
 
-    public void printStderrMessage(final String tag) {
-        final InputStream input = process.getErrorStream();
+    public void printStderrMessage(String filename, String tag) {
+        if (null != process) {
+            printMessage(process.getErrorStream(), filename, tag);
+        }
+    }
+
+    private void printMessage(final InputStream input, final String filename, final String tag) {
         new Thread(new Runnable() {
             @RequiresApi(api = Build.VERSION_CODES.KITKAT)
             public void run() {
@@ -103,7 +97,7 @@ public class ExecCommand {
                 try {
                     while(null != (line = bufferedReader.readLine()) && null != process) {
                         Log.e(TAG, tag + " " + process + ": " + line);
-                        FileKeyValueOP.writeAddLineToFile("/mnt/sda/sda1/ch_auto_test_result.txt", line);
+                        FileKeyValueOP.writeAddLineToFile(filename, Utils.getCurrDate() + line);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();

@@ -111,7 +111,7 @@ public class WifiAutoConnectHelper {
         if (null != wifiInfo && null != wifiInfo.getSSID()) {
             if (wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
                 //正在连接的热点就是配置文件中的热点，直接退出
-                Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 正在连接的热点就是配置文件中的热点，直接退出！");
+                Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 正在连接的热点就是配置文件中的热点");
                 return;
             }
         }
@@ -124,7 +124,7 @@ public class WifiAutoConnectHelper {
                 }
                 if(scanResultList.size() == index) {
                     //扫描到的热点中没有要连接的热点，直接退出不做处理
-                    Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 扫描到的热点中没有要连接的热点，直接退出不做处理！");
+                    Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 扫描到的热点中没有要连接的热点");
                     return;
                 }
             }
@@ -169,6 +169,8 @@ public class WifiAutoConnectHelper {
     public boolean startPingTest(WifiManager wifiManager, ConnectivityManager connectivityManager) {
         final WifiInfo wifiInfo = wifiManager.getConnectionInfo();
         NetworkInfo networkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+        List<ScanResult> scanResultList = wifiManager.getScanResults();
+        ScanResult scanResult = null;
 
         if (NetworkInfo.DetailedState.CONNECTED != networkInfo.getDetailedState()) {
             Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 未获取到ip，不能进行ping测试");
@@ -182,19 +184,30 @@ public class WifiAutoConnectHelper {
         final int iRrepeateTime = Integer.parseInt(this.repeate);
         if (null != wifiInfo && null != wifiInfo.getSSID()) {
             if (wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
+                int index;
+                for (index=0; index<scanResultList.size(); index++) {
+                    if(wifiInfo.getBSSID().equals(scanResultList.get(index).BSSID)) {
+                        scanResult = scanResultList.get(index);
+                        break;
+                    }
+                }
+                if (scanResultList.size() == index) {
+                    Log.e(TAG, "不应该到这儿来");
+                    return false;
+                }
 
-                final String cmd = "ping "+ " -c " + count + " -s " + datasize + " -W " + timeout + " " + host;
-                if (0 == iRrepeateTime) {
+                final String currIP = Utils.ipMultipleStringToSignleString(Utils.hisiIpLongToString(wifiInfo.getIpAddress()));
+                final String currWifiFrequency = ""+scanResult.frequency;
+                final String cmd = "ping"+ " -c " + count + " -s " + datasize + " -W " + timeout + " " + host;
+                if (0 == iRrepeateTime && null != scanResult) {
                     isPingTestRunging = true;
                     ExecCommand execCommand = new ExecCommand();
                     execCommandList.add(execCommand);
-                    Log.e(TAG, "指定wifi(" + ssid + ")获取到ip，"+Utils.getCurrDate() + " 开始测试: " + cmd);
-                    FileKeyValueOP.writeAddLineToFile(logFile, "开始ping测试： " + cmd);
-                    execCommand.exitLog(logFile, "end " + cmd);
+                    execCommand.writeLogToFile(logFile, cmd, currIP , wifiInfo.getBSSID(), currWifiFrequency);
                     ProcessBuilder processBuilder = new ProcessBuilder("sh", "-c" , cmd);
                     execCommand.run(processBuilder);
-                    execCommand.printStdoutMessage( "stdout");
-                    execCommand.printStderrMessage( "stderr");
+                    execCommand.printStdoutMessage(logFile, "stdout");
+                    execCommand.printStderrMessage(logFile, "stderr");
                     Log.i(TAG, "开始进行ping测试, iRrepeateTime: " + iRrepeateTime);
                     return true;
                 } else {
@@ -206,13 +219,11 @@ public class WifiAutoConnectHelper {
                                 try {
                                     ExecCommand execCommand = new ExecCommand();
                                     execCommandList.add(execCommand);
-                                    Log.e(TAG, "指定wifi(" + ssid + ")获取到ip，"+Utils.getCurrDate() + " 开始测试: " + cmd);
-                                    FileKeyValueOP.writeAddLineToFile(logFile, "开始ping测试： " + cmd);
-                                    execCommand.exitLog(logFile, "end " + cmd);
+                                    execCommand.writeLogToFile(logFile, cmd, currIP , wifiInfo.getBSSID(), currWifiFrequency);
                                     ProcessBuilder processBuilder = new ProcessBuilder("sh", "-c" , cmd);
                                     execCommand.run(processBuilder);
-                                    execCommand.printStdoutMessage( "stdout");
-                                    execCommand.printStderrMessage( "stderr");
+                                    execCommand.printStdoutMessage(logFile, "stdout");
+                                    execCommand.printStderrMessage(logFile, "stderr");
 
                                     Thread.sleep(iRrepeateTime*1000);
                                 } catch (InterruptedException e) {
