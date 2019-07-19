@@ -51,9 +51,9 @@ public class ExecCommand {
         return process;
     }
 
-    public void writeLogToFile(String filename, String cmd, String ip, String mac, String frequency) {
+    public void writeLogToFile(String filename, String cmd, String ip, String mac, String frequency, String repeate) {
         this.logFilename = filename;
-        this.log = "IP:" + ip + ", AP MAC:" + mac + ", AP frequency:" + frequency + ", cmd:" +cmd;
+        this.log = "IP:" + ip + ", AP MAC:" + mac + ", AP frequency:" + frequency + ", repeate:" + repeate + ", cmd:" +cmd;
     }
 
 
