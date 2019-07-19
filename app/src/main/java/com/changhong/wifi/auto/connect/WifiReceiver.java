@@ -32,6 +32,7 @@ class WifiReceiver extends BroadcastReceiver {
     static WifiAutoConnectHelper wifiAutoConnectHelper = null;
 
     static boolean isBootFristRun = true;
+    static boolean isPingTestRunging = false;
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -77,11 +78,14 @@ class WifiReceiver extends BroadcastReceiver {
             if (DISCONNECTED == supplicantState) {
                 //断开时，关闭ping命令操做【在相同的ssid切换时】
                 Log.e(TAG, "身份验证--连接断开, SSID: " + wifiInfo.getSSID() + ", BSSID: " + wifiInfo.getBSSID());
+                wifiAutoConnectHelper.destroyPingTest();
+                isPingTestRunging = false;
             }
 
-            if (COMPLETED == supplicantState) {
+            if (COMPLETED == supplicantState && isPingTestRunging == false) {
                 //连接好时启动ping命令操做【在相同的ssid切换时】
                 Log.e(TAG, "身份验证--连接完成, SSID: " + wifiInfo.getSSID() + ", BSSID: " + wifiInfo.getBSSID());
+                isPingTestRunging =wifiAutoConnectHelper.startPingTest(wifiManager, connectivityManager);
             }
 
         } else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
@@ -103,13 +107,15 @@ class WifiReceiver extends BroadcastReceiver {
             if (NetworkInfo.DetailedState.DISCONNECTED == networkInfo.getDetailedState() && null == bssid) {
                 //连接断开，停止ping命令的线程
                 Log.e(TAG, "连接断开");
-//                wifiAutoConnectHelper.autoConnect(wifiManager);
+                wifiAutoConnectHelper.destroyPingTest();
+                isPingTestRunging = false;
             } else if (NetworkInfo.DetailedState.OBTAINING_IPADDR == networkInfo.getDetailedState()) {
                 //正在dhcp获取ip
 //                Log.e(TAG, "正在dhcp获取ip");
-            } else if (NetworkInfo.DetailedState.CONNECTED == networkInfo.getDetailedState() && null != wifiInfo) {
+            } else if (NetworkInfo.DetailedState.CONNECTED == networkInfo.getDetailedState() && null != wifiInfo && isPingTestRunging == false) {
                 //已成功获取到ip，启动ping命令的线程
                 Log.e(TAG, "已成功获取到ip");
+                isPingTestRunging = wifiAutoConnectHelper.startPingTest(wifiManager, connectivityManager);
             }
 
 
