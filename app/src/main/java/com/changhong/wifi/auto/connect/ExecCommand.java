@@ -26,6 +26,7 @@ public class ExecCommand {
 
         try {
             FileKeyValueOP.writeAddLineToFile(logFilename, Utils.getCurrDate() + "[START] " + log);
+            Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] " + Utils.getCurrDate() + " 开始进行一次ping测试");
             process = processBuilder.start();
         } catch (IOException e) {
             e.printStackTrace();

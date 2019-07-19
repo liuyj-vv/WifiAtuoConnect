@@ -21,6 +21,7 @@ import java.util.TreeMap;
 public class WifiAutoConnectHelper {
     String TAG = WifiAutoConnectHelper.class.getPackage().getName();
     boolean isPingTestRunging = false;
+    Thread cyclePingThread;
 
     String  wifiType, ssid, passwd, repeate, host,count,timeout,datasize;
 
@@ -161,7 +162,7 @@ public class WifiAutoConnectHelper {
         }
         execCommandList.clear();
         isPingTestRunging = false;
-        Log.i(TAG, "网络断开，ping测试停止!!!");
+        Log.i(TAG, "网络断开，循环的ping测试停止!!!");
         return true;
     }
 
@@ -171,6 +172,12 @@ public class WifiAutoConnectHelper {
         NetworkInfo networkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
         List<ScanResult> scanResultList = wifiManager.getScanResults();
         ScanResult scanResult = null;
+
+        if (isPingTestRunging == true) {
+            Log.e(TAG, "-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=" + isPingTestRunging);
+            destroyPingTest();
+            Log.e(TAG, "-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=" + isPingTestRunging);
+        }
 
         if (NetworkInfo.DetailedState.CONNECTED != networkInfo.getDetailedState()) {
             Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 未获取到ip，不能进行ping测试");
@@ -208,11 +215,11 @@ public class WifiAutoConnectHelper {
                     execCommand.run(processBuilder);
                     execCommand.printStdoutMessage(logFile, "stdout");
                     execCommand.printStderrMessage(logFile, "stderr");
-                    Log.i(TAG, "开始进行ping测试, iRrepeateTime: " + iRrepeateTime);
+                    Log.i(TAG, "开启单独的一次ping测试, iRrepeateTime: " + iRrepeateTime);
                     return true;
                 } else {
                     isPingTestRunging = true;
-                    new Thread(new Runnable() {
+                    cyclePingThread = new Thread(new Runnable() {
                         @Override
                         public void run() {
                             while (true) {
@@ -231,8 +238,9 @@ public class WifiAutoConnectHelper {
                                 }
                             }
                         }
-                    }).start();
-                    Log.i(TAG, "开始进行ping测试, iRrepeateTime: " + iRrepeateTime);
+                    });
+                    cyclePingThread.start();
+                    Log.i(TAG, "开启定时启动的ping测试, iRrepeateTime: " + iRrepeateTime);
                     return true;
                 }
             }

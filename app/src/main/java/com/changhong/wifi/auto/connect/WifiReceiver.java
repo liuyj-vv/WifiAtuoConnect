@@ -29,7 +29,7 @@ class WifiReceiver extends BroadcastReceiver {
     String TAG = WifiReceiver.class.getPackage().getName();
     WifiManager wifiManager;
     ConnectivityManager connectivityManager;
-    static WifiAutoConnectHelper wifiAutoConnectHelper = null;
+    static WifiAutoConnectHelper wifiAutoConnectHelper = new WifiAutoConnectHelper();
 
     static boolean isBootFristRun = true;
 
@@ -42,9 +42,9 @@ class WifiReceiver extends BroadcastReceiver {
         wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         connectivityManager = (ConnectivityManager) context.getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
 
-        if (null == wifiAutoConnectHelper) {
-            wifiAutoConnectHelper = new WifiAutoConnectHelper();
-        }
+//        if (null == wifiAutoConnectHelper) {
+//            wifiAutoConnectHelper = new WifiAutoConnectHelper();
+//        }
 
         if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) { // 这个监听wifi的打开与关闭，与wifi的连接无关
             int wifiState = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN);//当前的状态
