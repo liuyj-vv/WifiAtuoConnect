@@ -14,7 +14,6 @@ public class LedControl {
     public static void ledCtrl(int status,String type)
     {
 //        Log.i(TAG, "status: "+ status +", type: " + type);
-
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("jsonrpc","2.0");
@@ -45,4 +44,81 @@ public class LedControl {
             e.printStackTrace();
         }
     }
+
+
+    static Thread ledFlickerThread = null;
+    static boolean isFlickerThreadRuing = false;
+
+    public static void ledWifiNo() {
+        if (null != ledFlickerThread) {
+            try {
+                isFlickerThreadRuing = false;
+                ledFlickerThread.join();
+                ledFlickerThread = null;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                LedControl.ledCtrl(1, "ir");
+                Log.e(TAG, "=============亮灯");
+            }
+        }).start();
+    }
+    public static void ledWifiConnected() {
+        if (null != ledFlickerThread) {
+            try {
+                isFlickerThreadRuing = false;
+                ledFlickerThread.join();
+                ledFlickerThread = null;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Log.e(TAG, "=============灭灯");
+                LedControl.ledCtrl(0, "ir");
+            }
+        }).start();
+    }
+
+    public static void ledWifiConnecting() {
+        if (null == ledFlickerThread) {
+            ledFlickerThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    int count = 0;
+                    isFlickerThreadRuing = true;
+                    Log.e(TAG, "=============闪烁  222");
+                    while (true && isFlickerThreadRuing) {
+                        try {
+                            count ++;
+                            //"type": "ir"
+                            //"ir""power""network"....
+                            //仅仅ir可以控制红灯亮灭
+                            if (1 == count%2) {
+                                LedControl.ledCtrl(1, "ir");
+                            } else {
+                                LedControl.ledCtrl(0, "ir");
+                            }
+                            Thread.sleep(50);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
+            ledFlickerThread.start();
+        }
+    }
+
+
+
+
 }

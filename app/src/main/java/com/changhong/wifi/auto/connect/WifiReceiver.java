@@ -51,6 +51,10 @@ class WifiReceiver extends BroadcastReceiver {
             int wifiPreviousState =  intent.getIntExtra(WifiManager.EXTRA_PREVIOUS_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN);//之前的状态
             Log.i(TAG, "硬件状态(WIFI_STATE_CHANGED_ACTION): " + wifiState + ", " + isBootFristRun);
 
+            if (WifiManager.WIFI_STATE_ENABLED != wifiState) {
+                LedControl.ledWifiNo();
+            }
+
         } else if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(action)) {
             //扫描到一个热点, 并且此热点达可用状态会触发此广播
             //你可以从intent中取出一个boolean值; 如果此值为true, 代表着扫描热点已完全成功; 为false, 代表此次扫描不成功, ScanResult 距离上次扫描并未得到更新（可能存在）;
@@ -78,6 +82,14 @@ class WifiReceiver extends BroadcastReceiver {
                 //断开时，关闭ping命令操做【在相同的ssid切换时】
                 Log.e(TAG, "身份验证--连接断开, SSID: " + wifiInfo.getSSID() + ", BSSID: " + wifiInfo.getBSSID());
                 wifiAutoConnectHelper.destroyPingTest();
+            }
+
+            if (DISCONNECTED == supplicantState) {
+                LedControl.ledWifiNo();
+            }
+
+            if (ASSOCIATING == supplicantState) {
+                LedControl.ledWifiConnecting();
             }
 
             if (COMPLETED == supplicantState && false == wifiAutoConnectHelper.isPingTestRunging) {
@@ -113,6 +125,7 @@ class WifiReceiver extends BroadcastReceiver {
                 //已成功获取到ip，启动ping命令的线程
                 Log.e(TAG, "已成功获取到ip");
                 wifiAutoConnectHelper.startPingTest(wifiManager, connectivityManager);
+                LedControl.ledWifiConnected();
             }
 
 

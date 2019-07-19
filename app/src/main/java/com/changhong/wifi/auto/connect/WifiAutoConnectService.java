@@ -30,12 +30,16 @@ public class WifiAutoConnectService extends Service {
         Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]");
         super.onCreate();
         wifiManager = (WifiManager) getBaseContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+
+        LedControl.ledWifiNo();
+
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
                     while (true) {
                         if(!wifiManager.isWifiEnabled()) {
+                            LedControl.ledWifiNo();
                             wifiManager.setWifiEnabled(true);
                         }
                         Thread.sleep(1000);
@@ -46,28 +50,7 @@ public class WifiAutoConnectService extends Service {
             }
         }).start();
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                int count = 0;
-                while (true) {
-                    try {
-                        count ++;
-                        //"type": "ir"
-                        //"ir""power""network"....
-                        //仅仅ir可以控制红灯亮灭
-                        if (1 == count%2) {
-                            LedControl.ledCtrl(1, "ir");
-                        } else {
-                            LedControl.ledCtrl(0, "ir");
-                        }
-                        Thread.sleep(5);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }).start();
+
         wifiRegister();
     }
 
