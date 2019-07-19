@@ -19,6 +19,10 @@ import android.util.Log;
 
 import java.util.List;
 
+import static android.net.wifi.SupplicantState.ASSOCIATING;
+import static android.net.wifi.SupplicantState.DISCONNECTED;
+import static android.net.wifi.SupplicantState.SCANNING;
+
 class WifiReceiver extends BroadcastReceiver {
     String TAG = WifiReceiver.class.getPackage().getName();
     WifiManager wifiManager;
@@ -45,17 +49,6 @@ class WifiReceiver extends BroadcastReceiver {
             int wifiPreviousState =  intent.getIntExtra(WifiManager.EXTRA_PREVIOUS_WIFI_STATE, WifiManager.WIFI_STATE_UNKNOWN);//之前的状态
             Log.i(TAG, "硬件状态(WIFI_STATE_CHANGED_ACTION): " + wifiState + ", " + isBootFristRun);
 
-            if (WifiManager.WIFI_STATE_ENABLED == wifiState && true == isBootFristRun) {
-                isBootFristRun = false;
-                if (null != wifiManager.getConnectionInfo() && null != wifiManager.getConnectionInfo().getSSID()){
-                    //比较ssid，若ssid不同，修改为连接配置文件中的ssid
-                    wifiAutoConnectHelper.bootFirstConnectWifi(wifiManager, wifiManager.getConnectionInfo().getSSID());
-                } else {
-                    //还没有ssid，直接新建连接
-                    wifiAutoConnectHelper.bootFirstConnectWifi(wifiManager);
-                }
-            }
-
         } else if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(action)) {
             //扫描到一个热点, 并且此热点达可用状态会触发此广播
             //你可以从intent中取出一个boolean值; 如果此值为true, 代表着扫描热点已完全成功; 为false, 代表此次扫描不成功, ScanResult 距离上次扫描并未得到更新（可能存在）;
@@ -63,16 +56,6 @@ class WifiReceiver extends BroadcastReceiver {
                 Log.i(TAG, "扫描结果(SCAN_RESULTS_AVAILABLE_ACTION) " + wifiManager.getConnectionInfo().getBSSID()
                         + ", " + wifiManager.getConnectionInfo().getSSID()
                         + ", " + Utils.ipMultipleStringToSignleString(Utils.hisiIpLongToString(wifiManager.getConnectionInfo().getIpAddress())));
-
-//                List<ScanResult> scanResultList = wifiManager.getScanResults();
-//                for (int index=0; index<scanResultList.size(); index++) {
-//                    Log.i(TAG, scanResultList.get(index).BSSID
-//                            + ",  " + scanResultList.get(index).frequency
-//                            + ",  " + scanResultList.get(index).level
-//                            + ",  " + scanResultList.get(index).describeContents()
-//                            + ",  " + scanResultList.get(index).SSID
-//                            + ",  " + scanResultList.get(index).capabilities);
-//                }
             } else {
                 Log.i(TAG, "扫描结果(SCAN_RESULTS_AVAILABLE_ACTION) ");
             }
@@ -80,13 +63,14 @@ class WifiReceiver extends BroadcastReceiver {
         } else if (WifiManager.SUPPLICANT_STATE_CHANGED_ACTION.equals(action)) {
             SupplicantState supplicantState = intent.getParcelableExtra(WifiManager.EXTRA_NEW_STATE); //// 获取当前网络新状态.
             int error = intent.getIntExtra(WifiManager.EXTRA_SUPPLICANT_ERROR, 0);      //// 获取当前网络连接状态码.
-            Log.i(TAG, "连接验证(SUPPLICANT_STATE_CHANGED_ACTION): " + supplicantState +", " + error);
+            WifiInfo wifiInfo = wifiManager.getConnectionInfo();
 
-            if (supplicantState == SupplicantState.COMPLETED) {
-                boolean reconnect = wifiManager.reconnect();
-                if (false == reconnect) {
-                    Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 重新连接新的网络失败,即使网络是连接上的");
-                }
+            Log.i(TAG, "正在验证身份(SUPPLICANT_STATE_CHANGED_ACTION): " + supplicantState + ", " + wifiManager.getScanResults().size() + ", " + wifiInfo);
+            if (null != wifiInfo.getSSID())
+                Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] ssid: " + wifiInfo.getSSID());
+
+            if (DISCONNECTED == supplicantState || ASSOCIATING == supplicantState) {
+                wifiAutoConnectHelper.connectConfigWifi(wifiManager);
             }
         } else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
             //这三个方法能够获取手机当前连接的Wifi信息，注意在wifi断开时Intent中不包含WifiInfo对象，却包含bssid。
@@ -95,23 +79,19 @@ class WifiReceiver extends BroadcastReceiver {
             WifiInfo wifiInfo = intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
 
             DhcpInfo dhcpInfo = wifiManager.getDhcpInfo();
-            Log.i(TAG, "网络状态(NETWORK_STATE_CHANGED_ACTION): "
+            Log.i(TAG, "正在获取网络ip信息(NETWORK_STATE_CHANGED_ACTION): "
                     + networkInfo.getDetailedState() + ", "
-                    + networkInfo.getState() +
-                    ", bssid: " + bssid + ", "
+                    + networkInfo.getState()
+                    + ", bssid: " + bssid + ", "
+                    + ", isAvailable: " + networkInfo.isAvailable() + ", "
+                    + ", isConnected: " + networkInfo.isConnected() + ", "
                     + networkInfo.getTypeName()
-                    + ": " + networkInfo.getType());
-
-            if (null != wifiInfo) {
-                Log.i(TAG, "wifiInfo: " + wifiInfo.getSSID() + ", " + dhcpInfo.ipAddress);
-            } else {
-                Log.i(TAG, "wifiInfo: " + wifiInfo + ", " + dhcpInfo);
-            }
+                    + "(" + networkInfo.getType()+")");
 
             if (NetworkInfo.DetailedState.DISCONNECTED == networkInfo.getDetailedState() && null == bssid) {
                 //连接断开
                 Log.e(TAG, "连接断开");
-                wifiAutoConnectHelper.autoConnect(wifiManager);
+//                wifiAutoConnectHelper.autoConnect(wifiManager);
             } else if (NetworkInfo.DetailedState.OBTAINING_IPADDR == networkInfo.getDetailedState()) {
                 //正在dhcp获取ip
                 Log.e(TAG, "正在dhcp获取ip");
@@ -128,7 +108,7 @@ class WifiReceiver extends BroadcastReceiver {
             Log.i(TAG, "上层连接变化(CONNECTIVITY_ACTION),: " + networkInfo.getDetailedState());
 
             if (null != networkInfo) {
-                Log.i(TAG, "networkInfo.isAvailable(): " + networkInfo.isAvailable());
+                Log.i(TAG, "isAvailable(): " + networkInfo.isAvailable() + "， isConnected(): " + networkInfo.isConnected());
             } else {
                 Log.i(TAG, "networkInfo: " + networkInfo);
             }

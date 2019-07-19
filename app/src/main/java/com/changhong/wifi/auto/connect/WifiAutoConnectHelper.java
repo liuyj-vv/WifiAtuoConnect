@@ -8,6 +8,7 @@ import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
+import android.widget.SimpleAdapter;
 
 import java.io.File;
 import java.util.Date;
@@ -84,6 +85,64 @@ public class WifiAutoConnectHelper {
             this.datasize = parameter[3];
         }
         return true;
+    }
+
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    public void connectConfigWifi(WifiManager wifiManager) {
+        if(!readConfig()) {
+            Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 配置文件读取错误");
+            return;
+        }
+
+        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+        List<ScanResult> scanResultList = wifiManager.getScanResults();
+
+        if (null != wifiInfo.getSSID()) {
+            if (wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
+                //正在连接的热点就是配置文件中的热点，直接退出
+                Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 正在连接的热点就是配置文件中的热点，直接退出！");
+                return;
+            }
+        }
+
+        if (0 != scanResultList.size()) {
+            int index;
+            for(index=0; index<scanResultList.size(); index++) {
+                if (scanResultList.get(index).SSID.equals(ssid)) {
+                    break;
+                }
+                if(scanResultList.size() == index) {
+                    //扫描到的热点中没有要连接的热点，直接退出不做处理
+                    Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 扫描到的热点中没有要连接的热点，直接退出不做处理！");
+                    return;
+                }
+            }
+        }
+
+        if (!wifiManager.isWifiEnabled()) {
+            Log.e(TAG, "wifi功能被关闭了!!!!");
+            return;
+        }
+
+        Log.e(TAG, "wifi连接到配置文件指定的热点 1, " + "ssid： " + ssid +  ", wifiType:" + wifiType);
+        int netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, Integer.parseInt(wifiType)));
+        if (-1 == netId) {
+            Log.e(TAG, "添加新的网络描述失败!!!");
+            return;
+        }
+        boolean enable = wifiManager.enableNetwork(netId, true); //true连接新的网络
+        if (false == enable) {
+            Log.e(TAG, "将新的网络描述,使能失败!!!");
+            return;
+        }
+        boolean reconnect = wifiManager.reconnect();
+        if (false == reconnect) {
+            Log.e(TAG, "重新连接新的网络失败!!!");
+            return;
+        }
+
+        Log.e(TAG, "完成重新连接网络到 ----> " + ssid);
     }
 
 
