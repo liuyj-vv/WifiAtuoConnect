@@ -203,7 +203,7 @@ public class WifiAutoConnectHelper {
                     isPingTestRunging = true;
                     ExecCommand execCommand = new ExecCommand();
                     execCommandList.add(execCommand);
-                    execCommand.writeLogToFile(logFile, cmd, currIP , wifiInfo.getBSSID(), currWifiFrequency, repeate);
+                    execCommand.writeLogToFile(logFile, cmd, currIP , wifiInfo.getBSSID(), currWifiFrequency, wifiInfo.getSSID(), repeate);
                     ProcessBuilder processBuilder = new ProcessBuilder("sh", "-c" , cmd);
                     execCommand.run(processBuilder);
                     execCommand.printStdoutMessage(logFile, "stdout");
@@ -219,7 +219,7 @@ public class WifiAutoConnectHelper {
                                 try {
                                     ExecCommand execCommand = new ExecCommand();
                                     execCommandList.add(execCommand);
-                                    execCommand.writeLogToFile(logFile, cmd, currIP , wifiInfo.getBSSID(), currWifiFrequency, repeate);
+                                    execCommand.writeLogToFile(logFile, cmd, currIP , wifiInfo.getBSSID(), currWifiFrequency, wifiInfo.getSSID(), repeate);
                                     ProcessBuilder processBuilder = new ProcessBuilder("sh", "-c" , cmd);
                                     execCommand.run(processBuilder);
                                     execCommand.printStdoutMessage(logFile, "stdout");
