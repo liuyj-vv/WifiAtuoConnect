@@ -20,8 +20,7 @@ import java.util.TreeMap;
 
 public class WifiAutoConnectHelper {
     String TAG = WifiAutoConnectHelper.class.getPackage().getName();
-    Process process;
-
+    boolean isPingTestRunging = false;
 
     String  wifiType, ssid, passwd, repeate, host,count,timeout,datasize;
 
@@ -161,6 +160,8 @@ public class WifiAutoConnectHelper {
             execCommand.destroy();
         }
         execCommandList.clear();
+        isPingTestRunging = false;
+        Log.i(TAG, "网络断开，ping测试停止!!!");
         return true;
     }
 
@@ -184,6 +185,7 @@ public class WifiAutoConnectHelper {
 
                 final String cmd = "ping "+ " -c " + count + " -s " + datasize + " -W " + timeout + " " + host;
                 if (0 == iRrepeateTime) {
+                    isPingTestRunging = true;
                     ExecCommand execCommand = new ExecCommand();
                     execCommandList.add(execCommand);
                     Log.e(TAG, "指定wifi(" + ssid + ")获取到ip，"+Utils.getCurrDate() + " 开始测试: " + cmd);
@@ -196,6 +198,7 @@ public class WifiAutoConnectHelper {
                     Log.i(TAG, "开始进行ping测试, iRrepeateTime: " + iRrepeateTime);
                     return true;
                 } else {
+                    isPingTestRunging = true;
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
