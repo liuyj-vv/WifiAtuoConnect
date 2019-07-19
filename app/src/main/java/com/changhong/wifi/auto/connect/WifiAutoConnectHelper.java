@@ -84,6 +84,15 @@ public class WifiAutoConnectHelper {
             this.timeout = parameter[2];
             this.datasize = parameter[3];
         }
+
+        Log.e(TAG,  "配置信息，wifiType: " + this.wifiType
+                + ", ssid: " + this.ssid
+                + ", passwd: " + this.passwd
+                + ", host: " + this.host
+                + ", count: " + this.count
+                + ", timeout: " + this.timeout
+                + ", datasize: " + this.datasize
+        );
         return true;
     }
 

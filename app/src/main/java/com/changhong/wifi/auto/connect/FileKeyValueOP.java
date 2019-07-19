@@ -39,7 +39,7 @@ public class FileKeyValueOP {
                         if (-1 != (index = strValue.indexOf("//"))) {
                             strValue = strValue.substring(0, index).trim();
                         }
-                        Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]: " + strValue);
+                        //Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]: " + strValue);
                         vaule[0] = strValue;
                         return true;
                     }

@@ -17,9 +17,11 @@ import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
+import java.util.Dictionary;
 import java.util.List;
 
 import static android.net.wifi.SupplicantState.ASSOCIATING;
+import static android.net.wifi.SupplicantState.COMPLETED;
 import static android.net.wifi.SupplicantState.DISCONNECTED;
 import static android.net.wifi.SupplicantState.SCANNING;
 
@@ -64,14 +66,24 @@ class WifiReceiver extends BroadcastReceiver {
             SupplicantState supplicantState = intent.getParcelableExtra(WifiManager.EXTRA_NEW_STATE); //// 获取当前网络新状态.
             int error = intent.getIntExtra(WifiManager.EXTRA_SUPPLICANT_ERROR, 0);      //// 获取当前网络连接状态码.
             WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-
-            Log.i(TAG, "正在验证身份(SUPPLICANT_STATE_CHANGED_ACTION): " + supplicantState + ", " + wifiManager.getScanResults().size() + ", " + wifiInfo);
-            if (null != wifiInfo.getSSID())
-                Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] ssid: " + wifiInfo.getSSID());
+            Log.i(TAG, "正在验证身份(SUPPLICANT_STATE_CHANGED_ACTION): " + supplicantState + ", WifiNum: " + wifiManager.getScanResults().size() + ",  SSID: " + wifiInfo.getSSID() + ", BSSID: " + wifiInfo.getBSSID());
 
             if (DISCONNECTED == supplicantState || ASSOCIATING == supplicantState) {
+                //1.DISCONNECTED： 断开后需要重新连接
+                //2.ASSOCIATING ： 开机时启动连接
                 wifiAutoConnectHelper.connectConfigWifi(wifiManager);
             }
+
+            if (DISCONNECTED == supplicantState) {
+                //断开时，关闭ping命令操做【在相同的ssid切换时】
+                Log.e(TAG, "身份验证--连接断开, SSID: " + wifiInfo.getSSID() + ", BSSID: " + wifiInfo.getBSSID());
+            }
+
+            if (COMPLETED == supplicantState) {
+                //连接好时启动ping命令操做【在相同的ssid切换时】
+                Log.e(TAG, "身份验证--连接完成, SSID: " + wifiInfo.getSSID() + ", BSSID: " + wifiInfo.getBSSID());
+            }
+
         } else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
             //这三个方法能够获取手机当前连接的Wifi信息，注意在wifi断开时Intent中不包含WifiInfo对象，却包含bssid。
             NetworkInfo networkInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
@@ -89,14 +101,14 @@ class WifiReceiver extends BroadcastReceiver {
                     + "(" + networkInfo.getType()+")");
 
             if (NetworkInfo.DetailedState.DISCONNECTED == networkInfo.getDetailedState() && null == bssid) {
-                //连接断开
+                //连接断开，停止ping命令的线程
                 Log.e(TAG, "连接断开");
 //                wifiAutoConnectHelper.autoConnect(wifiManager);
             } else if (NetworkInfo.DetailedState.OBTAINING_IPADDR == networkInfo.getDetailedState()) {
                 //正在dhcp获取ip
-                Log.e(TAG, "正在dhcp获取ip");
+//                Log.e(TAG, "正在dhcp获取ip");
             } else if (NetworkInfo.DetailedState.CONNECTED == networkInfo.getDetailedState() && null != wifiInfo) {
-                //已成功获取到ip
+                //已成功获取到ip，启动ping命令的线程
                 Log.e(TAG, "已成功获取到ip");
             }
 
@@ -105,19 +117,11 @@ class WifiReceiver extends BroadcastReceiver {
             //ConnectivityManager.EXTRA_NO_CONNECTIVITY 返回true，代表未连接
             boolean b = intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false);
             NetworkInfo networkInfo = intent.getParcelableExtra(ConnectivityManager.EXTRA_NETWORK_INFO);
-            Log.i(TAG, "上层连接变化(CONNECTIVITY_ACTION),: " + networkInfo.getDetailedState());
-
-            if (null != networkInfo) {
-                Log.i(TAG, "isAvailable(): " + networkInfo.isAvailable() + "， isConnected(): " + networkInfo.isConnected());
-            } else {
-                Log.i(TAG, "networkInfo: " + networkInfo);
-            }
+//            Log.i(TAG, "上层连接变化(CONNECTIVITY_ACTION),: " + networkInfo.getDetailedState());
 
         } else if (WifiManager.RSSI_CHANGED_ACTION.equals(action)) {
             int rssi = intent.getIntExtra(wifiManager.EXTRA_NEW_RSSI, 0);
             Log.i(TAG, "信号强度(RSSI_CHANGED_ACTION): " + rssi );
-
-
         } else if("TEST_ACTION".equals(action)) {
             Log.i(TAG, "测试广播处理 " +action);
             int index;
