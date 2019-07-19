@@ -107,7 +107,7 @@ public class WifiAutoConnectHelper {
         WifiInfo wifiInfo = wifiManager.getConnectionInfo();
         List<ScanResult> scanResultList = wifiManager.getScanResults();
 
-        if (null != wifiInfo.getSSID()) {
+        if (null != wifiInfo && null != wifiInfo.getSSID()) {
             if (wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
                 //正在连接的热点就是配置文件中的热点，直接退出
                 Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 正在连接的热点就是配置文件中的热点，直接退出！");
@@ -115,7 +115,7 @@ public class WifiAutoConnectHelper {
             }
         }
 
-        if (0 != scanResultList.size()) {
+        if (null != scanResultList && 0 != scanResultList.size()) {
             int index;
             for(index=0; index<scanResultList.size(); index++) {
                 if (scanResultList.get(index).SSID.equals(ssid)) {
@@ -152,54 +152,6 @@ public class WifiAutoConnectHelper {
         }
 
         Log.i(TAG, "完成重新连接网络到 ----> " + ssid);
-    }
-
-
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    public boolean sss(WifiManager wifiManager, List<ScanResult> scanResultList) {
-        if(!readConfig()) {
-            Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 配置文件读取错误");
-            return false;
-        }
-
-        isMachOk = false;
-        if (null == scanResultList) {
-            scanResultList = wifiManager.getScanResults();
-            if (null == scanResultList) {
-                Log.e(TAG, "scanResultList为空，连接" + "---->"+ ssid + ", wifiType:" + wifiType);
-                int netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, Integer.parseInt(wifiType)));
-                boolean enable = wifiManager.enableNetwork(netId, true);
-                boolean reconnect = wifiManager.reconnect();
-                return true;
-            }
-        }
-
-        if (true == isReadFlagOk && null != scanResultList) {
-            for (int i=0; i<scanResultList.size(); i++) {
-                if (scanResultList.get(i).SSID.equals(ssid)) {
-                    isMachOk = true;
-                    break;
-                }
-            }
-        }
-
-//        Log.e(TAG, "重新连接指定wifi" +wifiType +" "+ ssid +" "+ passwd);
-
-        if (true == isMachOk) {
-            WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-            if (null != wifiInfo && null != wifiInfo.getSSID()) {
-                if (!wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
-                    Log.e(TAG, "重新连接指定wifi: " + wifiInfo.getSSID() +"---->"+ ssid + ", wifiType:" + wifiType);
-                    int netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, Integer.parseInt(wifiType)));
-                    boolean enable = wifiManager.enableNetwork(netId, true);
-                    boolean reconnect = wifiManager.reconnect();
-                    return true;
-                }
-            }
-        }
-
-        Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 条件不满足，没有重连");
-        return false;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
