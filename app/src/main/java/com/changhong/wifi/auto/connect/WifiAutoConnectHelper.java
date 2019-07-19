@@ -24,9 +24,9 @@ public class WifiAutoConnectHelper {
 
     String  wifiType, ssid, passwd, repeate, host,count,timeout,datasize;
 
-    static String keyWifiType = "wifiType_2.4G";
-    static String keySsid = "ssid_2.4G";
-    static String keyPasswd = "passwd_2.4G";
+    static String keyWifiType = "wifiType";
+    static String keySsid = "ssid";
+    static String keyPasswd = "passwd";
     static String keyRepeate = "ping_repeate";
     static String keyparameter = "ping_parameter";
     static String configFile = "/mnt/sda/sda1/ch_auto_test_wifi.cfg";
