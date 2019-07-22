@@ -27,7 +27,7 @@ public class WifiAutoConnectService extends Service {
         super.onCreate();
         wifiManager = (WifiManager) getBaseContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
-        LedControl.ledWifiConnectNo();
+        LedControl.ledWifiConnect_no();
 
         new Thread(new Runnable() {
             @Override
@@ -35,7 +35,7 @@ public class WifiAutoConnectService extends Service {
                 try {
                     while (true) {
                         if(!wifiManager.isWifiEnabled()) {
-                            LedControl.ledWifiConnectNo();
+                            LedControl.ledWifiConnect_no();
                             wifiManager.setWifiEnabled(true);
                         }
                         Thread.sleep(1000);

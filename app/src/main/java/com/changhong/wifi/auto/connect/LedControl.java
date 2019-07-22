@@ -11,21 +11,19 @@ import java.util.List;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+enum State {
+    Connect_no,
+    Connect_ing,
+    Connect_dhcp_successful,
+
+    Ping_ing,
+    Ping_faile,
+    Ping_successful
+}
 
 public class LedControl {
     static String TAG = LedControl.class.getPackage().getName();
-    static enum State {
-        Connect_no,
-        Connect_ing,
-        Connect_faile,
-        Connect_successful,
-        DHCP_obtain_ing,
-        DHCP_obtain_faile,
-        DHCP_obtain_successful,
-        Ping_ing,
-        Ping_faile,
-        Ping_successful
-    }
+    static State stateCurr = State.Connect_no;
 
 
     public static void ledCtrl(int status,String type) {
@@ -62,29 +60,110 @@ public class LedControl {
 
     static List<Thread> threadList = new ArrayList<>();
 
-
     //未连接，同时也没有开始连接
-    public static void ledWifiConnectNo() {
-        ledCloseCycle();
+    public static void ledWifiConnect_no() {
+        if (stateCurr == State.Connect_no) {
+            return;
+        } else {
+            stateCurr = State.Connect_no;
+        }
+        ledCloseAllCycle();
 
+        Log.e(TAG, "============= 连接断开，没有连接");
+        ledOFF();
+    }
+
+    //正在连接到wifi
+    public static void ledWifiConnect_ing() {
+        if (stateCurr == State.Connect_ing) {
+            return;
+        } else {
+            stateCurr = State.Connect_ing;
+        }
+        ledCloseAllCycle();
+
+        Log.e(TAG, "============= 正在连接");
+        ledCycle(100);
+    }
+
+    //dhcp获取ip成功
+    public static void ledWifiConnect_dhcp_succesful() {
+        if (stateCurr == State.Connect_dhcp_successful) {
+            return;
+        } else {
+            stateCurr = State.Connect_dhcp_successful;
+        }
+        ledCloseAllCycle();
+
+        Log.e(TAG, "============= 连接成功，且dhcp获取成功");
+        ledCycle(1000);
+    }
+
+    //正在进行ping测试
+    public static void ledWifiPing_ing() {
+        if (stateCurr == State.Ping_ing) {
+            return;
+        } else {
+            stateCurr = State.Ping_ing;
+        }
+        ledCloseAllCycle();
+
+
+        Log.e(TAG, "============= 进行ping测试");
+        ledCycle(1000);
+    }
+
+    //ping失败
+    public static void ledWifiPing_failure() {
+        if (stateCurr == State.Ping_faile) {
+            return;
+        } else {
+            stateCurr = State.Ping_faile;
+        }
+        ledCloseAllCycle();
+
+        Log.e(TAG, "============= ping测试失败");
+        ledCycle(3000);
+    }
+
+
+
+    //ping成功
+    public static void ledWifiPingSuccessful() {
+        if (stateCurr == State.Ping_successful) {
+            return;
+        } else {
+            stateCurr = State.Ping_successful;
+        }
+        ledCloseAllCycle();
+
+        Log.e(TAG, "============= ping测试成功");
+        ledON();
+    }
+
+
+    static private void ledON() {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Log.e(TAG, "=============灯灭");
+                LedControl.ledCtrl(1, "ir");
+            }
+        }).start();
+    }
+    static private void ledOFF() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
                 LedControl.ledCtrl(0, "ir");
             }
         }).start();
     }
 
-    //正在连接到wifi
-    public static void ledWifiConnecting() {
-        ledCloseCycle();
-
+    static private void ledCycle(final int s) {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 boolean isLightFlag = true;
-                Log.e(TAG, "============= 快速闪烁");
                 while (true) {
                     try {
                         if (isLightFlag) {
@@ -94,7 +173,7 @@ public class LedControl {
                             LedControl.ledCtrl(1, "ir");
                             isLightFlag = true;
                         }
-                        Thread.sleep(100);
+                        Thread.sleep(s);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                         break;
@@ -106,84 +185,7 @@ public class LedControl {
         thread.start();
     }
 
-    //dhcp获取ip成功
-    public static void ledWifiDhcpSuccesful() {
-        ledCloseCycle();
-
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                boolean isLightFlag = true;
-                Log.e(TAG, "============= 一秒闪烁");
-                while (true) {
-                    try {
-                        if (isLightFlag) {
-                            LedControl.ledCtrl(0, "ir");
-                            isLightFlag = false;
-                        } else {
-                            LedControl.ledCtrl(1, "ir");
-                            isLightFlag = true;
-                        }
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                        break;
-                    }
-                }
-            }
-        });
-        threadList.add(thread);
-        thread.start();
-    }
-
-    //ping失败
-    public static void ledWifiPingFailure() {
-        ledCloseCycle();
-
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                boolean isLightFlag = true;
-                Log.e(TAG, "============= 三秒闪烁");
-                while (true) {
-                    try {
-                        if (isLightFlag) {
-                            LedControl.ledCtrl(0, "ir");
-                            isLightFlag = false;
-                        } else {
-                            LedControl.ledCtrl(1, "ir");
-                            isLightFlag = true;
-                        }
-                        Thread.sleep(3000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                        break;
-                    }
-                }
-            }
-        });
-        threadList.add(thread);
-        thread.start();
-    }
-
-
-    //ping成功
-    public static void ledWifiPingSuccessful() {
-        ledCloseCycle();
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Log.e(TAG, "============= 灯亮");
-                LedControl.ledCtrl(1, "ir");
-            }
-        }).start();
-
-    }
-
-
-
-    static private void ledCloseCycle() {
+    static private void ledCloseAllCycle() {
         for (int index=0; index<threadList.size(); index++) {
             threadList.get(index).interrupt();
             try {
@@ -194,5 +196,4 @@ public class LedControl {
         }
         threadList.clear();
     }
-
 }

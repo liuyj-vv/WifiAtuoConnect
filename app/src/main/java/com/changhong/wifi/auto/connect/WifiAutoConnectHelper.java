@@ -3,6 +3,7 @@ package com.changhong.wifi.auto.connect;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
+import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
@@ -13,10 +14,15 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import static android.net.wifi.SupplicantState.ASSOCIATING;
+import static android.net.wifi.SupplicantState.COMPLETED;
+import static android.net.wifi.SupplicantState.DISCONNECTED;
+import static android.net.wifi.WifiManager.WIFI_STATE_ENABLED;
+
 public class WifiAutoConnectHelper {
     String TAG = this.getClass().getPackage().getName();
     boolean isPingTestRunging = false;
-    Thread cyclePingThread;
+    Thread cyclePingThread = null;
 
     String  wifiType, ssid, passwd, repeate, host,count,timeout,datasize;
 
@@ -93,16 +99,19 @@ public class WifiAutoConnectHelper {
         return true;
     }
 
-
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    public void connectConfigWifi(WifiManager wifiManager) {
+    public void handlerWifiState(WifiManager wifiManager) {
+        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+
+        if (WIFI_STATE_ENABLED != wifiManager.getWifiState()) {
+            return;
+        }
+
         if(!readConfig()) {
             Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 配置文件读取错误");
             return;
         }
 
-        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-        List<ScanResult> scanResultList = wifiManager.getScanResults();
 
         if (null != wifiInfo && null != wifiInfo.getSSID()) {
             if (wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
@@ -112,44 +121,66 @@ public class WifiAutoConnectHelper {
             }
         }
 
-        if (null != scanResultList && 0 != scanResultList.size()) {
-            int index;
-            for(index=0; index<scanResultList.size(); index++) {
-                if (scanResultList.get(index).SSID.equals(ssid)) {
-                    break;
-                }
-                if(scanResultList.size() == index) {
-                    //扫描到的热点中没有要连接的热点，直接退出不做处理
-                    Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 扫描到的热点中没有要连接的热点");
+       connectConfig(wifiManager);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    public void handlerScanResults(WifiManager wifiManager) {
+        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+        if (null != wifiInfo && null != wifiInfo.getSSID()) {
+            if(!readConfig()){
+                return;
+            }
+            if (null != wifiInfo && null != wifiInfo.getSSID()) {
+                if (wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
+                    //连接上的热点就是配置文件中的热点，直接退出
+                    Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 正在连接的热点就是配置文件中的热点");
                     return;
                 }
             }
+        } else {
+            //没有连接wifi
+            if(!readConfig()){
+                return;
+            }
+            connectConfig(wifiManager);
         }
-
-        if (!wifiManager.isWifiEnabled()) {
-            Log.i(TAG, "wifi功能被关闭了!!!!");
-            return;
-        }
-
-        Log.i(TAG, "wifi连接到配置文件指定的热点 1, " + "ssid： " + ssid +  ", wifiType:" + wifiType);
-        int netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, Integer.parseInt(wifiType)));
-        if (-1 == netId) {
-            Log.i(TAG, "添加新的网络描述失败!!!");
-            return;
-        }
-        boolean enable = wifiManager.enableNetwork(netId, true); //true连接新的网络
-        if (false == enable) {
-            Log.i(TAG, "将新的网络描述,使能失败!!!");
-            return;
-        }
-        boolean reconnect = wifiManager.reconnect();
-        if (false == reconnect) {
-            Log.i(TAG, "重新连接新的网络失败!!!");
-            return;
-        }
-
-        Log.i(TAG, "完成重新连接网络到 ----> " + ssid);
     }
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    public  void handlerSupplicant(WifiManager wifiManager, ConnectivityManager connectivityManager, SupplicantState supplicantState, int errNo) {
+        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+
+        if (DISCONNECTED == supplicantState) {
+            LedControl.ledWifiConnect_no();
+            destroyPingTest();
+        }
+        if (ASSOCIATING == supplicantState) {
+            LedControl.ledWifiConnect_ing();
+        }
+        if (COMPLETED == supplicantState) {
+            LedControl.ledWifiPing_ing();
+            startPingTest(wifiManager, connectivityManager);
+        }
+
+        Log.i(TAG, "" + supplicantState + ", ssid: " + wifiInfo.getSSID());
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    public  void handlefNetwork(WifiManager wifiManager, ConnectivityManager connectivityManager, NetworkInfo networkInfo, WifiInfo wifiInfo, String bssid) {
+
+        Log.i(TAG, "" + networkInfo);
+
+        if (NetworkInfo.DetailedState.DISCONNECTED == networkInfo.getDetailedState()) {
+            destroyPingTest();
+            LedControl.ledWifiConnect_no();
+        }
+        if (NetworkInfo.DetailedState.CONNECTED == networkInfo.getDetailedState()) {
+            startPingTest(wifiManager, connectivityManager);
+            LedControl.ledWifiPing_ing();
+        }
+    }
+
 
     public boolean destroyPingTest() {
         for (ExecCommand execCommand : execCommandList) {
@@ -158,8 +189,11 @@ public class WifiAutoConnectHelper {
         execCommandList.clear();
         Log.i(TAG, "网络断开，循环的ping测试停止!!!");
         try {
-            cyclePingThread.interrupt();
-            cyclePingThread.join();
+            if (null != cyclePingThread) {
+                cyclePingThread.interrupt();
+                cyclePingThread.join();
+                cyclePingThread = null;
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
             return false;
@@ -177,7 +211,7 @@ public class WifiAutoConnectHelper {
         ScanResult scanResult = null;
 
         if (NetworkInfo.DetailedState.CONNECTED != networkInfo.getDetailedState()) {
-            Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 未获取到ip，不能进行ping测试" + networkInfo.getDetailedState());
+            Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 未获取到ip，不能进行ping测试: " + networkInfo.getDetailedState());
             return false;
         }
 
@@ -212,7 +246,7 @@ public class WifiAutoConnectHelper {
                     execCommand.run(processBuilder);
                     execCommand.printStdoutMessage(logFile, "stdout");
                     execCommand.printStderrMessage(logFile, "stderr");
-                    LedControl.ledWifiDhcpSuccesful();
+                    LedControl.ledWifiConnect_dhcp_succesful();
                     Log.i(TAG, "开启单独的一次ping测试, iRrepeateTime: " + iRrepeateTime);
                     return true;
                 } else {
@@ -229,7 +263,7 @@ public class WifiAutoConnectHelper {
                                     execCommand.run(processBuilder);
                                     execCommand.printStdoutMessage(logFile, "stdout");
                                     execCommand.printStderrMessage(logFile, "stderr");
-                                    LedControl.ledWifiDhcpSuccesful();
+                                    LedControl.ledWifiConnect_dhcp_succesful();
 
                                     Thread.sleep(iRrepeateTime*1000);
                                 } catch (InterruptedException e) {
@@ -249,5 +283,27 @@ public class WifiAutoConnectHelper {
 
         Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 条件不满足，没有进行ping测试");
         return false;
+    }
+
+    private boolean connectConfig(WifiManager wifiManager) {
+        Log.i(TAG, "wifi连接到配置文件指定的热点 1, " + "ssid： " + ssid +  ", wifiType:" + wifiType);
+        int netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, Integer.parseInt(wifiType)));
+        if (-1 == netId) {
+            Log.i(TAG, "添加新的网络描述失败!!!");
+            return false;
+        }
+        boolean enable = wifiManager.enableNetwork(netId, true); //true连接新的网络
+        if (false == enable) {
+            Log.i(TAG, "将新的网络描述,使能失败!!!");
+            return false;
+        }
+        boolean reconnect = wifiManager.reconnect();
+        if (false == reconnect) {
+            Log.i(TAG, "重新连接新的网络失败!!!");
+            return false;
+        }
+
+        Log.i(TAG, "完成重新连接网络到 ----> " + ssid);
+        return true;
     }
 }
