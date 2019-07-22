@@ -14,6 +14,20 @@ import okhttp3.Response;
 
 public class LedControl {
     static String TAG = LedControl.class.getPackage().getName();
+    static enum State {
+        Connect_no,
+        Connect_ing,
+        Connect_faile,
+        Connect_successful,
+        DHCP_obtain_ing,
+        DHCP_obtain_faile,
+        DHCP_obtain_successful,
+        Ping_ing,
+        Ping_faile,
+        Ping_successful
+    }
+
+
     public static void ledCtrl(int status,String type) {
         JSONObject jsonObject = new JSONObject();
         try {
