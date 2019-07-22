@@ -5,13 +5,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
-import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.IBinder;
 import android.util.Log;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class WifiAutoConnectService extends Service {
     String TAG = WifiAutoConnectService.class.getPackage().getName();
@@ -31,7 +27,7 @@ public class WifiAutoConnectService extends Service {
         super.onCreate();
         wifiManager = (WifiManager) getBaseContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
-        LedControl.ledWifiNo();
+        LedControl.ledWifiConnectNo();
 
         new Thread(new Runnable() {
             @Override
@@ -39,7 +35,7 @@ public class WifiAutoConnectService extends Service {
                 try {
                     while (true) {
                         if(!wifiManager.isWifiEnabled()) {
-                            LedControl.ledWifiNo();
+                            LedControl.ledWifiConnectNo();
                             wifiManager.setWifiEnabled(true);
                         }
                         Thread.sleep(1000);

@@ -5,15 +5,16 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class LedControl {
     static String TAG = LedControl.class.getPackage().getName();
-    public static void ledCtrl(int status,String type)
-    {
-//        Log.i(TAG, "status: "+ status +", type: " + type);
+    public static void ledCtrl(int status,String type) {
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("jsonrpc","2.0");
@@ -45,80 +46,139 @@ public class LedControl {
         }
     }
 
+    static List<Thread> threadList = new ArrayList<>();
 
-    static Thread ledFlickerThread = null;
-    static boolean isFlickerThreadRuing = false;
 
-    public static void ledWifiNo() {
-        if (null != ledFlickerThread) {
-            try {
-                isFlickerThreadRuing = false;
-                ledFlickerThread.join();
-                ledFlickerThread = null;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+    //未连接，同时也没有开始连接
+    public static void ledWifiConnectNo() {
+        ledCloseCycle();
 
         new Thread(new Runnable() {
             @Override
             public void run() {
-                LedControl.ledCtrl(1, "ir");
-                Log.e(TAG, "=============亮灯");
-            }
-        }).start();
-    }
-    public static void ledWifiConnected() {
-        if (null != ledFlickerThread) {
-            try {
-                isFlickerThreadRuing = false;
-                ledFlickerThread.join();
-                ledFlickerThread = null;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Log.e(TAG, "=============灭灯");
+                Log.e(TAG, "=============灯灭");
                 LedControl.ledCtrl(0, "ir");
             }
         }).start();
     }
 
+    //正在连接到wifi
     public static void ledWifiConnecting() {
-        if (null == ledFlickerThread) {
-            ledFlickerThread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    int count = 0;
-                    isFlickerThreadRuing = true;
-                    Log.e(TAG, "=============闪烁  222");
-                    while (true && isFlickerThreadRuing) {
-                        try {
-                            count ++;
-                            //"type": "ir"
-                            //"ir""power""network"....
-                            //仅仅ir可以控制红灯亮灭
-                            if (1 == count%2) {
-                                LedControl.ledCtrl(1, "ir");
-                            } else {
-                                LedControl.ledCtrl(0, "ir");
-                            }
-                            Thread.sleep(50);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+        ledCloseCycle();
+
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                boolean isLightFlag = true;
+                Log.e(TAG, "============= 快速闪烁");
+                while (true) {
+                    try {
+                        if (isLightFlag) {
+                            LedControl.ledCtrl(0, "ir");
+                            isLightFlag = false;
+                        } else {
+                            LedControl.ledCtrl(1, "ir");
+                            isLightFlag = true;
                         }
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                        break;
                     }
                 }
-            });
-            ledFlickerThread.start();
-        }
+            }
+        });
+        threadList.add(thread);
+        thread.start();
+    }
+
+    //dhcp获取ip成功
+    public static void ledWifiDhcpSuccesful() {
+        ledCloseCycle();
+
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                boolean isLightFlag = true;
+                Log.e(TAG, "============= 一秒闪烁");
+                while (true) {
+                    try {
+                        if (isLightFlag) {
+                            LedControl.ledCtrl(0, "ir");
+                            isLightFlag = false;
+                        } else {
+                            LedControl.ledCtrl(1, "ir");
+                            isLightFlag = true;
+                        }
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                        break;
+                    }
+                }
+            }
+        });
+        threadList.add(thread);
+        thread.start();
+    }
+
+    //ping失败
+    public static void ledWifiPingFailure() {
+        ledCloseCycle();
+
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                boolean isLightFlag = true;
+                Log.e(TAG, "============= 三秒闪烁");
+                while (true) {
+                    try {
+                        if (isLightFlag) {
+                            LedControl.ledCtrl(0, "ir");
+                            isLightFlag = false;
+                        } else {
+                            LedControl.ledCtrl(1, "ir");
+                            isLightFlag = true;
+                        }
+                        Thread.sleep(3000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                        break;
+                    }
+                }
+            }
+        });
+        threadList.add(thread);
+        thread.start();
+    }
+
+
+    //ping成功
+    public static void ledWifiPingSuccessful() {
+        ledCloseCycle();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Log.e(TAG, "============= 灯亮");
+                LedControl.ledCtrl(1, "ir");
+            }
+        }).start();
+
     }
 
 
 
+    static private void ledCloseCycle() {
+        for (int index=0; index<threadList.size(); index++) {
+            threadList.get(index).interrupt();
+            try {
+                threadList.get(index).join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        threadList.clear();
+    }
 
 }

@@ -1,6 +1,5 @@
 package com.changhong.wifi.auto.connect;
 
-import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
@@ -9,17 +8,13 @@ import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
-import android.widget.LinearLayout;
-import android.widget.SimpleAdapter;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.TreeMap;
 
 public class WifiAutoConnectHelper {
-    String TAG = WifiAutoConnectHelper.class.getPackage().getName();
+    String TAG = this.getClass().getPackage().getName();
     boolean isPingTestRunging = false;
     Thread cyclePingThread;
 
@@ -182,7 +177,7 @@ public class WifiAutoConnectHelper {
         ScanResult scanResult = null;
 
         if (NetworkInfo.DetailedState.CONNECTED != networkInfo.getDetailedState()) {
-            Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 未获取到ip，不能进行ping测试");
+            Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 未获取到ip，不能进行ping测试" + networkInfo.getDetailedState());
             return false;
         }
 
@@ -217,6 +212,7 @@ public class WifiAutoConnectHelper {
                     execCommand.run(processBuilder);
                     execCommand.printStdoutMessage(logFile, "stdout");
                     execCommand.printStderrMessage(logFile, "stderr");
+                    LedControl.ledWifiDhcpSuccesful();
                     Log.i(TAG, "开启单独的一次ping测试, iRrepeateTime: " + iRrepeateTime);
                     return true;
                 } else {
@@ -233,6 +229,7 @@ public class WifiAutoConnectHelper {
                                     execCommand.run(processBuilder);
                                     execCommand.printStdoutMessage(logFile, "stdout");
                                     execCommand.printStderrMessage(logFile, "stderr");
+                                    LedControl.ledWifiDhcpSuccesful();
 
                                     Thread.sleep(iRrepeateTime*1000);
                                 } catch (InterruptedException e) {
@@ -250,7 +247,7 @@ public class WifiAutoConnectHelper {
             }
         }
 
-        Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 条件不满足，没有进行ping测试");
+        Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 条件不满足，没有进行ping测试");
         return false;
     }
 }

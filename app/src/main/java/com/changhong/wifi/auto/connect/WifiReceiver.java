@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.DhcpInfo;
-import android.net.Network;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
@@ -17,13 +16,11 @@ import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
-import java.util.Dictionary;
 import java.util.List;
 
 import static android.net.wifi.SupplicantState.ASSOCIATING;
 import static android.net.wifi.SupplicantState.COMPLETED;
 import static android.net.wifi.SupplicantState.DISCONNECTED;
-import static android.net.wifi.SupplicantState.SCANNING;
 
 class WifiReceiver extends BroadcastReceiver {
     String TAG = WifiReceiver.class.getPackage().getName();
@@ -52,7 +49,7 @@ class WifiReceiver extends BroadcastReceiver {
             Log.i(TAG, "硬件状态(WIFI_STATE_CHANGED_ACTION): " + wifiState + ", " + isBootFristRun);
 
             if (WifiManager.WIFI_STATE_ENABLED != wifiState) {
-                LedControl.ledWifiNo();
+                LedControl.ledWifiConnectNo();
             }
 
         } else if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(action)) {
@@ -65,6 +62,8 @@ class WifiReceiver extends BroadcastReceiver {
             } else {
                 Log.i(TAG, "扫描结果(SCAN_RESULTS_AVAILABLE_ACTION) ");
             }
+
+            wifiAutoConnectHelper.connectConfigWifi(wifiManager);
 
         } else if (WifiManager.SUPPLICANT_STATE_CHANGED_ACTION.equals(action)) {
             SupplicantState supplicantState = intent.getParcelableExtra(WifiManager.EXTRA_NEW_STATE); //// 获取当前网络新状态.
@@ -85,7 +84,7 @@ class WifiReceiver extends BroadcastReceiver {
             }
 
             if (DISCONNECTED == supplicantState) {
-                LedControl.ledWifiNo();
+                LedControl.ledWifiConnectNo();
             }
 
             if (ASSOCIATING == supplicantState) {
@@ -125,7 +124,6 @@ class WifiReceiver extends BroadcastReceiver {
                 //已成功获取到ip，启动ping命令的线程
                 Log.e(TAG, "已成功获取到ip");
                 wifiAutoConnectHelper.startPingTest(wifiManager, connectivityManager);
-                LedControl.ledWifiConnected();
             }
 
 

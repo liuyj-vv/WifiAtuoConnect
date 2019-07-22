@@ -98,7 +98,9 @@ public class ExecCommand {
                 try {
                     while(null != (line = bufferedReader.readLine()) && null != process) {
                         Log.e(TAG, tag + " " + process + ": " + line);
+
                         FileKeyValueOP.writeAddLineToFile(filename, Utils.getCurrDate() + line);
+                        LedControl.ledWifiPingSuccessful();
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
