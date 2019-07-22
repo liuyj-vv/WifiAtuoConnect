@@ -121,12 +121,13 @@ public class WifiAutoConnectHelper {
             }
         }
 
-       connectConfig(wifiManager);
+       connectConfigWIFI(wifiManager);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     public void handlerScanResults(WifiManager wifiManager) {
         WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+        List<ScanResult> scanResultList = wifiManager.getScanResults();
         if (null != wifiInfo && null != wifiInfo.getSSID()) {
             if(!readConfig()){
                 return;
@@ -138,12 +139,26 @@ public class WifiAutoConnectHelper {
                     return;
                 }
             }
+            if (null != scanResultList) {
+                int index;
+                for (index=0; index<scanResultList.size(); index++) {
+                    if (scanResultList.get(index).SSID.equals(ssid)) {
+                        break;
+                    }
+                    if (scanResultList.size() == index) {
+                        //扫描到得热点，没有配置文件中的配置
+                        Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 扫描到得热点，没有配置文件中的配置");
+                        return;
+                    }
+                }
+            }
+            connectConfigWIFI(wifiManager);
         } else {
             //没有连接wifi
             if(!readConfig()){
                 return;
             }
-            connectConfig(wifiManager);
+            connectConfigWIFI(wifiManager);
         }
     }
 
@@ -158,8 +173,7 @@ public class WifiAutoConnectHelper {
         if (ASSOCIATING == supplicantState) {
             LedControl.ledWifiConnect_ing();
         }
-        if (COMPLETED == supplicantState) {
-            LedControl.ledWifiPing_ing();
+         if (COMPLETED == supplicantState) {
             startPingTest(wifiManager, connectivityManager);
         }
 
@@ -177,7 +191,6 @@ public class WifiAutoConnectHelper {
         }
         if (NetworkInfo.DetailedState.CONNECTED == networkInfo.getDetailedState()) {
             startPingTest(wifiManager, connectivityManager);
-            LedControl.ledWifiPing_ing();
         }
     }
 
@@ -285,7 +298,7 @@ public class WifiAutoConnectHelper {
         return false;
     }
 
-    private boolean connectConfig(WifiManager wifiManager) {
+    private boolean connectConfigWIFI(WifiManager wifiManager) {
         Log.i(TAG, "wifi连接到配置文件指定的热点 1, " + "ssid： " + ssid +  ", wifiType:" + wifiType);
         int netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, Integer.parseInt(wifiType)));
         if (-1 == netId) {

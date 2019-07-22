@@ -11,17 +11,18 @@ import java.util.List;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-enum State {
-    Connect_no,
-    Connect_ing,
-    Connect_dhcp_successful,
 
-    Ping_ing,
-    Ping_faile,
-    Ping_successful
-}
 
 public class LedControl {
+    enum State {
+        Connect_no,
+        Connect_ing,
+        Connect_dhcp_successful,
+
+        Ping_ing,
+        Ping_faile,
+        Ping_successful
+    }
     static String TAG = LedControl.class.getPackage().getName();
     static State stateCurr = State.Connect_no;
 
