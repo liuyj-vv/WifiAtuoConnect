@@ -1,11 +1,35 @@
 package com.changhong.wifi.auto.connect;
 
+import android.os.RemoteException;
 import android.util.Log;
 
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Enumeration;
 
 public class Utils {
+
+    String TAG = Utils.class.getPackage().getName();
+    public String getDeviceLanMACAddress() throws RemoteException {
+        try {
+            Enumeration<NetworkInterface> nifs = NetworkInterface.getNetworkInterfaces();
+            while (nifs.hasMoreElements()) {
+                NetworkInterface nif = nifs.nextElement();
+                if (nif.getName().equals("ethnet")) {
+                    Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName() + " lan mac:" + Utils.byteMacToString(nif.getHardwareAddress()));
+                    return Utils.byteMacToString(nif.getHardwareAddress());
+                }
+            }
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+
+        return "00:00:00:00:00";
+    }
+
+
     public static String getCurrDate() {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//设置日期格式
         return simpleDateFormat.format(new Date()) + ": "; // new Date()为获取当前系统时间
