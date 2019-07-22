@@ -161,8 +161,16 @@ public class WifiAutoConnectHelper {
             execCommand.destroy();
         }
         execCommandList.clear();
-        isPingTestRunging = false;
         Log.i(TAG, "网络断开，循环的ping测试停止!!!");
+        try {
+            cyclePingThread.interrupt();
+            cyclePingThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return false;
+        }
+        Log.i(TAG, "本次连接的ping测试已全部退出!!!");
+        isPingTestRunging = false;
         return true;
     }
 
@@ -172,12 +180,6 @@ public class WifiAutoConnectHelper {
         NetworkInfo networkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
         List<ScanResult> scanResultList = wifiManager.getScanResults();
         ScanResult scanResult = null;
-
-        if (isPingTestRunging == true) {
-            Log.e(TAG, "-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=" + isPingTestRunging);
-            destroyPingTest();
-            Log.e(TAG, "-=-=-=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=" + isPingTestRunging);
-        }
 
         if (NetworkInfo.DetailedState.CONNECTED != networkInfo.getDetailedState()) {
             Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 未获取到ip，不能进行ping测试");
@@ -235,6 +237,8 @@ public class WifiAutoConnectHelper {
                                     Thread.sleep(iRrepeateTime*1000);
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
+                                    Log.i(TAG, "收到中断，停止定时ping测试的线程！！！");
+                                    break;
                                 }
                             }
                         }
