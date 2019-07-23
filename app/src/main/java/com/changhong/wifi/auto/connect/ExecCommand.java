@@ -99,36 +99,47 @@ public class ExecCommand {
                 String line = null;
                 Pattern pattern;
                 Matcher matcher;
-                int res;
-                int index = -1;
+                String key;
                 try {
                     while(null != (line = bufferedReader.readLine()) && null != process) {
                         Log.i(TAG, tag + " " + process + ": " + line);
                         FileKeyValueOP.writeAddLineToFile(filename, Utils.getCurrDate() + line);
 
-                        pattern = Pattern.compile("received, (\\d*?)%");
+                        key = "received, (\\d*?)%";
+                        pattern = Pattern.compile(key);
                         matcher = pattern.matcher(line);
 
                         if (matcher.find()) {
-                            Log.d(TAG, "000000000000000000: "+matcher.group());
-                            Log.d(TAG, "000000000000000000: "+matcher.group(1));
-                            if (100 == Integer.parseInt(matcher.group(1))) {
+                            Log.d(TAG, "key: "+key + " ==== " + matcher.group());
+                            if (matcher.group(1).equals("100")) {   // 如果丢失率时 100%
                                 LedControl.ledWifiPing_failure();
                             } else {
                                 LedControl.ledWifiPing_successful();
                             }
                         }
 
-                        pattern = Pattern.compile("Redirect Network");
+                        key = "Redirect Network";
+                        pattern = Pattern.compile(key);
                         matcher = pattern.matcher(line);
                         if (matcher.find()) {
+                            Log.d(TAG, "key: "+key + " ==== " + matcher.group());
                             LedControl.ledWifiPing_failure();
                         }
 
-                        pattern = Pattern.compile("time=.*? ms");
+                        key = "time=.*? ms";
+                        pattern = Pattern.compile(key);   // 收到ping正确的返回
                         matcher = pattern.matcher(line);
                         if (matcher.find()) {
+                            Log.d(TAG, "key: "+key + " ==== " + matcher.group());
                             LedControl.ledWifiPing_successful();
+                        }
+
+                        key = "unknown host";
+                        pattern = Pattern.compile(key);   // 收到ping正确的返回
+                        matcher = pattern.matcher(line);
+                        if (matcher.find()) {
+                            Log.d(TAG, "key: "+key + " ==== " + matcher.group());
+                            LedControl.ledWifiPing_failure();
                         }
                     }
                 } catch (IOException e) {
