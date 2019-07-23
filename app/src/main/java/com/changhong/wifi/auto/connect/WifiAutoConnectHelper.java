@@ -13,6 +13,7 @@ import android.util.Log;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static android.net.wifi.SupplicantState.ASSOCIATING;
 import static android.net.wifi.SupplicantState.COMPLETED;
@@ -219,8 +220,9 @@ public class WifiAutoConnectHelper {
         }
     }
 
-
+    private ReentrantLock lock = new ReentrantLock();
     public boolean destroyPingTest() {
+        lock.lock();
         for (ExecCommand execCommand : execCommandList) {
             execCommand.destroy();
         }
@@ -240,6 +242,7 @@ public class WifiAutoConnectHelper {
         }
         Log.i(TAG, "本次连接的ping测试已全部退出!!!");
         isPingTestRunging = false;
+        lock.unlock();
         return true;
     }
 
@@ -296,6 +299,7 @@ public class WifiAutoConnectHelper {
                     Log.i(TAG, "开启单独的一次ping测试, iRrepeateTime: " + iRrepeateTime);
                     return true;
                 } else {
+                    lock.lock();
                     isPingTestRunging = true;
                     cyclePingThread = new Thread(new Runnable() {
                         @Override
@@ -322,6 +326,7 @@ public class WifiAutoConnectHelper {
                     });
                     cyclePingThread.start();
                     Log.i(TAG, "开启定时启动的ping测试, iRrepeateTime: " + iRrepeateTime);
+                    lock.unlock();
                     return true;
                 }
             }

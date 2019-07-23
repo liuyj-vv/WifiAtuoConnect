@@ -168,7 +168,7 @@ public class LedControl {
         }).start();
     }
 
-    static private ReentrantLock lock = new ReentrantLock(); // 需要保证多个线程使用的是同一个锁
+    static private ReentrantLock lock = new ReentrantLock();
     static private void ledCycle(final int s) {
         lock.lock();
         cycleLedThread = new Thread(new Runnable() {
