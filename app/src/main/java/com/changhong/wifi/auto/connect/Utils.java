@@ -10,15 +10,14 @@ import java.util.Date;
 import java.util.Enumeration;
 
 public class Utils {
+    static String TAG = Utils.class.getPackage().getName();
 
-    String TAG = Utils.class.getPackage().getName();
-    public String getDeviceLanMACAddress() throws RemoteException {
+    static public String getDeviceLanMACAddress() throws RemoteException {
         try {
             Enumeration<NetworkInterface> nifs = NetworkInterface.getNetworkInterfaces();
             while (nifs.hasMoreElements()) {
                 NetworkInterface nif = nifs.nextElement();
-                if (nif.getName().equals("ethnet")) {
-                    Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName() + " lan mac:" + Utils.byteMacToString(nif.getHardwareAddress()));
+                if (nif.getName().equals("eth0")) {
                     return Utils.byteMacToString(nif.getHardwareAddress());
                 }
             }
@@ -26,7 +25,8 @@ public class Utils {
             e.printStackTrace();
         }
 
-        return "00:00:00:00:00";
+        Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName() + " lan eth0 error!");
+        return "000000000000";
     }
 
 

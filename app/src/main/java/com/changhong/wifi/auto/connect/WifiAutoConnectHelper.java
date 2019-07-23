@@ -7,6 +7,7 @@ import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
+import android.os.RemoteException;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
@@ -33,11 +34,25 @@ public class WifiAutoConnectHelper {
     static String keyRepeate = "ping_repeate";
     static String keyparameter = "ping_parameter";
     static String configFile = "/mnt/sda/sda1/ch_auto_test_wifi.cfg";
-    static String logFile =  "/mnt/sda/sda1/ch_auto_test_result.txt";
+    static String logFile;
 //    ExecCommand execCommand = new ExecCommand();
     List<ExecCommand> execCommandList = new ArrayList<>();
 
     static Long configFileLastModified = 0L;
+
+    static {
+        try {
+            String mac = Utils.getDeviceLanMACAddress();
+            if (12 == mac.length()) {
+                logFile = "/mnt/sda/sda1/ch_auto_test_result_" + mac.substring(8) + ".txt";
+            } else {
+                logFile = "/mnt/sda/sda1/ch_auto_test_result_0000.txt";
+            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            logFile = "/mnt/sda/sda1/ch_auto_test_result_0000.txt";
+        }
+    }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private boolean readConfig() {
