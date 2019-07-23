@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ExecCommand {
     String TAG = ExecCommand.class.getPackage().getName();
@@ -95,12 +97,37 @@ public class ExecCommand {
                 Reader reader = new InputStreamReader(input);
                 BufferedReader bufferedReader = new BufferedReader(reader);
                 String line = null;
+                Pattern pattern;
+                int res;
+                int index = -1;
                 try {
                     while(null != (line = bufferedReader.readLine()) && null != process) {
                         Log.e(TAG, tag + " " + process + ": " + line);
-
                         FileKeyValueOP.writeAddLineToFile(filename, Utils.getCurrDate() + line);
-                        LedControl.ledWifiPingSuccessful();
+
+                        index = line.indexOf("received");
+                        if (-1 != index) {
+//                            res = Integer.parseInt(line.substring(index));
+//                            Log.e(TAG, "返回结果： " + res);
+//                            if (0 == res) {
+//                                LedControl.ledWifiPing_failure();
+//                            }else {
+//                                LedControl.ledWifiPingSuccessful();
+//                            }
+                        }
+
+                        index = line.indexOf("Redirect Network");
+                        if (-1 != index) {
+                            Log.e(TAG, line.substring(index));
+                            LedControl.ledWifiPing_failure();
+                        }
+                        index = line.indexOf("time=");
+                        if (-1 != index) {
+                            Log.e(TAG, line.substring(index));
+//                            res = Integer.parseInt(line.substring(index));
+//                            Log.e(TAG, "返回结果： " + res);
+                            LedControl.ledWifiPingSuccessful();
+                        }
                     }
                 } catch (IOException e) {
                     e.printStackTrace();

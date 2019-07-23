@@ -63,6 +63,8 @@ public class LedControl {
 
     //未连接，同时也没有开始连接
     public static void ledWifiConnect_no() {
+        Log.e(TAG, "============= 连接断开，没有连接");
+
         if (stateCurr == State.Connect_no) {
             return;
         } else {
@@ -70,12 +72,13 @@ public class LedControl {
         }
         ledCloseAllCycle();
 
-        Log.e(TAG, "============= 连接断开，没有连接");
         ledOFF();
     }
 
     //正在连接到wifi
     public static void ledWifiConnect_ing() {
+        Log.e(TAG, "============= 正在连接");
+
         if (stateCurr == State.Connect_ing) {
             return;
         } else {
@@ -83,12 +86,13 @@ public class LedControl {
         }
         ledCloseAllCycle();
 
-        Log.e(TAG, "============= 正在连接");
         ledCycle(100);
     }
 
     //dhcp获取ip成功
     public static void ledWifiConnect_dhcp_succesful() {
+        Log.e(TAG, "============= 连接成功，且dhcp获取成功");
+
         if (stateCurr == State.Connect_dhcp_successful) {
             return;
         } else {
@@ -96,12 +100,13 @@ public class LedControl {
         }
         ledCloseAllCycle();
 
-        Log.e(TAG, "============= 连接成功，且dhcp获取成功");
         ledCycle(1000);
     }
 
     //正在进行ping测试
     public static void ledWifiPing_ing() {
+        Log.e(TAG, "============= 进行ping测试");
+
         if (stateCurr == State.Ping_ing) {
             return;
         } else {
@@ -110,12 +115,13 @@ public class LedControl {
         ledCloseAllCycle();
 
 
-        Log.e(TAG, "============= 进行ping测试");
         ledCycle(1000);
     }
 
     //ping失败
     public static void ledWifiPing_failure() {
+        Log.e(TAG, "============= ping测试失败");
+
         if (stateCurr == State.Ping_faile) {
             return;
         } else {
@@ -123,7 +129,6 @@ public class LedControl {
         }
         ledCloseAllCycle();
 
-        Log.e(TAG, "============= ping测试失败");
         ledCycle(3000);
     }
 
@@ -131,6 +136,8 @@ public class LedControl {
 
     //ping成功
     public static void ledWifiPingSuccessful() {
+        Log.e(TAG, "============= ping测试成功");
+
         if (stateCurr == State.Ping_successful) {
             return;
         } else {
@@ -138,7 +145,6 @@ public class LedControl {
         }
         ledCloseAllCycle();
 
-        Log.e(TAG, "============= ping测试成功");
         ledON();
     }
 
@@ -164,8 +170,9 @@ public class LedControl {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
+                isRuning = true;
                 boolean isLightFlag = true;
-                while (true) {
+                while (isRuning) {
                     try {
                         if (isLightFlag) {
                             LedControl.ledCtrl(0, "ir");
@@ -177,20 +184,26 @@ public class LedControl {
                         Thread.sleep(s);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
+                        Log.e(TAG, "线程 进入中断");
                         break;
                     }
                 }
+                Log.e(TAG, "线程结束部分");
             }
         });
         threadList.add(thread);
         thread.start();
     }
 
+    static boolean isRuning = false;
     static private void ledCloseAllCycle() {
         for (int index=0; index<threadList.size(); index++) {
-            threadList.get(index).interrupt();
             try {
+                isRuning = false;
+                threadList.get(index).interrupt();
+                Log.e(TAG, "interrupt 输入");
                 threadList.get(index).join();
+                Log.e(TAG, "interrupt 线程退出");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

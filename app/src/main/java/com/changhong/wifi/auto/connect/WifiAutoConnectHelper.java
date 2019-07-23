@@ -111,17 +111,44 @@ public class WifiAutoConnectHelper {
             Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 配置文件读取错误");
             return;
         }
+        Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] ");
 
-
-        if (null != wifiInfo && null != wifiInfo.getSSID()) {
-            if (wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
-                //正在连接的热点就是配置文件中的热点，直接退出
-                Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 正在连接的热点就是配置文件中的热点");
-                return;
-            }
+        if(wifiIsConfigssid(wifiInfo)) {
+            return;
         }
 
        connectConfigWIFI(wifiManager);
+    }
+
+    private boolean wifiIsConfigssid(WifiInfo wifiInfo) {
+        if (null != wifiInfo && null != wifiInfo.getSSID()) {
+            if (wifiInfo.getSSID().equals("\"" + ssid + "\"")
+                    && ("\"" + ssid + "\"").equals(wifiInfo.getSSID())) {
+                //连接上的热点就是配置文件中的热点，直接退出
+                Log.i(TAG, Thread.currentThread().getStackTrace()[3].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 正在连接的热点就是配置文件中的热点: " + wifiInfo.getSSID());
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean scanResultsIsContainConfigssid(List<ScanResult> scanResultList) {
+        if (null != scanResultList) {
+            int index;
+            for (index=0; index<scanResultList.size(); index++) {
+                if (scanResultList.get(index).SSID.equals(ssid)) {
+//                    Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 扫描到到热点: "+ scanResultList.get(index).SSID);
+                    break;
+                }
+                if (scanResultList.size() == index+1) {
+                    //扫描到得热点，没有配置文件中的配置
+//                    Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 扫描得到热点，没有配置文件中的配置");
+                    LedControl.ledWifiConnect_no();
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -132,26 +159,18 @@ public class WifiAutoConnectHelper {
             if(!readConfig()){
                 return;
             }
-            if (null != wifiInfo && null != wifiInfo.getSSID()) {
-                if (wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
-                    //连接上的热点就是配置文件中的热点，直接退出
-                    Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 正在连接的热点就是配置文件中的热点");
-                    return;
-                }
+
+            if (!scanResultsIsContainConfigssid(scanResultList)) {
+                Log.e(TAG, "扫描到的热点没有配置文件中的ssid");
+                return;
             }
-            if (null != scanResultList) {
-                int index;
-                for (index=0; index<scanResultList.size(); index++) {
-                    if (scanResultList.get(index).SSID.equals(ssid)) {
-                        break;
-                    }
-                    if (scanResultList.size() == index) {
-                        //扫描到得热点，没有配置文件中的配置
-                        Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 扫描到得热点，没有配置文件中的配置");
-                        return;
-                    }
-                }
+
+            if (wifiIsConfigssid(wifiInfo)) {
+                //连上的wifi是配置文件中的wifi，直接返回，不再连接
+                Log.e(TAG, "连上的wifi是配置文件中的wifi，直接返回，不再重新连接");
+                return;
             }
+
             connectConfigWIFI(wifiManager);
         } else {
             //没有连接wifi
@@ -204,7 +223,9 @@ public class WifiAutoConnectHelper {
         try {
             if (null != cyclePingThread) {
                 cyclePingThread.interrupt();
+                Log.i(TAG, "cyclePingThread interrput输入");
                 cyclePingThread.join();
+                Log.i(TAG, "cyclePingThread 线程结束");
                 cyclePingThread = null;
             }
         } catch (InterruptedException e) {
@@ -223,6 +244,10 @@ public class WifiAutoConnectHelper {
         List<ScanResult> scanResultList = wifiManager.getScanResults();
         ScanResult scanResult = null;
 
+        if (true == isPingTestRunging) {
+            return false;
+        }
+
         if (NetworkInfo.DetailedState.CONNECTED != networkInfo.getDetailedState()) {
             Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 未获取到ip，不能进行ping测试: " + networkInfo.getDetailedState());
             return false;
@@ -234,7 +259,9 @@ public class WifiAutoConnectHelper {
         }
         final int iRrepeateTime = Integer.parseInt(this.repeate);
         if (null != wifiInfo && null != wifiInfo.getSSID()) {
-            if (wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
+            Log.i(TAG, Thread.currentThread().getStackTrace()[3].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] ");
+
+            if (wifiIsConfigssid(wifiInfo)) {
                 int index;
                 for (index=0; index<scanResultList.size(); index++) {
                     if(wifiInfo.getBSSID().equals(scanResultList.get(index).BSSID)) {
