@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ExecCommand {
@@ -97,6 +98,7 @@ public class ExecCommand {
                 BufferedReader bufferedReader = new BufferedReader(reader);
                 String line = null;
                 Pattern pattern;
+                Matcher matcher;
                 int res;
                 int index = -1;
                 try {
@@ -104,27 +106,28 @@ public class ExecCommand {
                         Log.i(TAG, tag + " " + process + ": " + line);
                         FileKeyValueOP.writeAddLineToFile(filename, Utils.getCurrDate() + line);
 
-                        String key = "received, ";
-                        index = line.indexOf(key);
-                        if (-1 != index && (index+key.length()) < line.length()) {
-                            res = Integer.parseInt(line.substring(index+key.length()));
-                            if (0 == res) {
+                        pattern = Pattern.compile("received, (\\d*?)%");
+                        matcher = pattern.matcher(line);
+
+                        if (matcher.find()) {
+                            Log.d(TAG, "000000000000000000: "+matcher.group());
+                            Log.d(TAG, "000000000000000000: "+matcher.group(1));
+                            if (100 == Integer.parseInt(matcher.group(1))) {
                                 LedControl.ledWifiPing_failure();
                             } else {
                                 LedControl.ledWifiPing_successful();
                             }
                         }
 
-                        index = line.indexOf("Redirect Network");
-                        if (-1 != index) {
-                            Log.d(TAG, line.substring(index));
+                        pattern = Pattern.compile("Redirect Network");
+                        matcher = pattern.matcher(line);
+                        if (matcher.find()) {
                             LedControl.ledWifiPing_failure();
                         }
-                        index = line.indexOf("time=");
-                        if (-1 != index) {
-                            Log.d(TAG, line.substring(index));
-//                            res = Integer.parseInt(line.substring(index));
-//                            Log.e(TAG, "返回结果： " + res);
+
+                        pattern = Pattern.compile("time=.*? ms");
+                        matcher = pattern.matcher(line);
+                        if (matcher.find()) {
                             LedControl.ledWifiPing_successful();
                         }
                     }
