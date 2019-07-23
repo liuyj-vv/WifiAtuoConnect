@@ -190,6 +190,12 @@ public class WifiAutoConnectHelper {
             destroyPingTest();
         }
         if (ASSOCIATING == supplicantState) {
+            if (!readConfig()) {
+                return;
+            }
+            if (!wifiIsConfigssid(wifiInfo)) {
+                return;
+            }
             LedControl.ledWifiConnect_ing();
         }
          if (COMPLETED == supplicantState) {
