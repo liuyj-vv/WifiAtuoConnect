@@ -124,6 +124,8 @@ public class WifiAutoConnectHelper {
         WifiInfo wifiInfo = wifiManager.getConnectionInfo();
 
         if (WIFI_STATE_ENABLED != wifiManager.getWifiState()) {
+            destroyPingTest();
+            LedControl.ledWifiConnect_no();
             return;
         }
 
