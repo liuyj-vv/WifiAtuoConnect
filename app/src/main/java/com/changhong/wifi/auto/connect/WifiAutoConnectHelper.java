@@ -56,6 +56,15 @@ public class WifiAutoConnectHelper {
             configFileLastModified = file.lastModified();
         } else {
             // 配置文件上次读取后，没有修改。
+            Log.e(TAG,  "配置信息（未重取），wifiType: " + this.wifiType
+                    + ", ssid: " + this.ssid
+                    + ", passwd: " + this.passwd
+                    + ", repeate: " + this.repeate
+                    + ", host: " + this.host
+                    + ", count: " + this.count
+                    + ", timeout: " + this.timeout
+                    + ", datasize: " + this.datasize
+            );
             return true;
         }
 

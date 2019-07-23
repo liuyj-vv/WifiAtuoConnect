@@ -176,8 +176,13 @@ public class LedControl {
             public void run() {
                 isRuning = true;
                 boolean isLightFlag = true;
+                boolean isNotFirstRun = false;
                 while (isRuning) {
                     try {
+                        if (isNotFirstRun) {
+                            Thread.sleep(s);
+                        }
+
                         if (isLightFlag) {
                             LedControl.ledCtrl(0, "ir");
                             isLightFlag = false;
@@ -185,7 +190,7 @@ public class LedControl {
                             LedControl.ledCtrl(1, "ir");
                             isLightFlag = true;
                         }
-                        Thread.sleep(s);
+                        isNotFirstRun = true;
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                         Log.e(TAG, "线程 进入中断");
