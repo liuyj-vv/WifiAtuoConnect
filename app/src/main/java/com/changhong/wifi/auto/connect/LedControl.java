@@ -137,7 +137,7 @@ public class LedControl {
 
 
     //ping成功
-    public static void ledWifiPingSuccessful() {
+    public static void ledWifiPing_successful() {
         Log.d(TAG, "============= ping测试成功: " + stateCurr);
 
         if (stateCurr == State.Ping_successful) {

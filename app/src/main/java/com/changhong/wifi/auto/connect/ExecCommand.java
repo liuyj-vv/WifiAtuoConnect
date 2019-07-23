@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ExecCommand {
@@ -105,15 +104,15 @@ public class ExecCommand {
                         Log.i(TAG, tag + " " + process + ": " + line);
                         FileKeyValueOP.writeAddLineToFile(filename, Utils.getCurrDate() + line);
 
-                        index = line.indexOf("received");
-                        if (-1 != index) {
-//                            res = Integer.parseInt(line.substring(index));
-//                            Log.e(TAG, "返回结果： " + res);
-//                            if (0 == res) {
-//                                LedControl.ledWifiPing_failure();
-//                            }else {
-//                                LedControl.ledWifiPingSuccessful();
-//                            }
+                        String key = "received, ";
+                        index = line.indexOf(key);
+                        if (-1 != index && (index+key.length()) < line.length()) {
+                            res = Integer.parseInt(line.substring(index+key.length()));
+                            if (0 == res) {
+                                LedControl.ledWifiPing_failure();
+                            } else {
+                                LedControl.ledWifiPing_successful();
+                            }
                         }
 
                         index = line.indexOf("Redirect Network");
@@ -126,7 +125,7 @@ public class ExecCommand {
                             Log.d(TAG, line.substring(index));
 //                            res = Integer.parseInt(line.substring(index));
 //                            Log.e(TAG, "返回结果： " + res);
-                            LedControl.ledWifiPingSuccessful();
+                            LedControl.ledWifiPing_successful();
                         }
                     }
                 } catch (IOException e) {
