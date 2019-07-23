@@ -184,10 +184,10 @@ public class LedControl {
                         }
 
                         if (isLightFlag) {
-                            LedControl.ledCtrl(0, "ir");
+                            LedControl.ledCtrl(1, "ir");
                             isLightFlag = false;
                         } else {
-                            LedControl.ledCtrl(1, "ir");
+                            LedControl.ledCtrl(0, "ir");
                             isLightFlag = true;
                         }
                         isNotFirstRun = true;
