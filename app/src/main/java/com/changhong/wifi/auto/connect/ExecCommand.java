@@ -102,7 +102,7 @@ public class ExecCommand {
                 int index = -1;
                 try {
                     while(null != (line = bufferedReader.readLine()) && null != process) {
-                        Log.e(TAG, tag + " " + process + ": " + line);
+                        Log.i(TAG, tag + " " + process + ": " + line);
                         FileKeyValueOP.writeAddLineToFile(filename, Utils.getCurrDate() + line);
 
                         index = line.indexOf("received");
@@ -118,12 +118,12 @@ public class ExecCommand {
 
                         index = line.indexOf("Redirect Network");
                         if (-1 != index) {
-                            Log.e(TAG, line.substring(index));
+                            Log.d(TAG, line.substring(index));
                             LedControl.ledWifiPing_failure();
                         }
                         index = line.indexOf("time=");
                         if (-1 != index) {
-                            Log.e(TAG, line.substring(index));
+                            Log.d(TAG, line.substring(index));
 //                            res = Integer.parseInt(line.substring(index));
 //                            Log.e(TAG, "返回结果： " + res);
                             LedControl.ledWifiPingSuccessful();

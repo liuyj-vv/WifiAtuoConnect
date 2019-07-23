@@ -248,21 +248,20 @@ public class WifiAutoConnectHelper {
             execCommand.destroy();
         }
         execCommandList.clear();
-        Log.i(TAG, "网络断开，循环的ping测试停止!!!");
         try {
             if (null != cyclePingThread) {
+                isPingTestRunging = false;
+                Log.i(TAG, "interrupt 输入，停止循环的ping测试!!!");
                 cyclePingThread.interrupt();
-                Log.i(TAG, "cyclePingThread interrput输入");
                 cyclePingThread.join();
-                Log.i(TAG, "cyclePingThread 线程结束");
-                cyclePingThread = null;
+                Log.d(TAG, "cyclePingThread.join 完成，循环启动ping测试的线程正常结束!");
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
             return false;
         }
-        Log.i(TAG, "本次连接的ping测试已全部退出!!!");
-        isPingTestRunging = false;
+        cyclePingThread = null; //移到下面，方式 join 函数出现异常而没有赋值。
+        Log.d(TAG, "销毁循环启动ping的函数正常结束!");
         lock.unlock();
         return true;
     }
@@ -326,7 +325,7 @@ public class WifiAutoConnectHelper {
                         @Override
                         public void run() {
                             boolean isNotFirstRun = false;
-                            while (true) {
+                            while (isPingTestRunging) {
                                 try {
                                     if (isNotFirstRun) {
                                         Thread.sleep(iRrepeateTime*1000);
@@ -348,6 +347,7 @@ public class WifiAutoConnectHelper {
                                     break;
                                 }
                             }
+                            Log.i(TAG, "定时启动的ping测试，终止！！, iRrepeateTime: " + iRrepeateTime);
                         }
                     });
                     cyclePingThread.start();

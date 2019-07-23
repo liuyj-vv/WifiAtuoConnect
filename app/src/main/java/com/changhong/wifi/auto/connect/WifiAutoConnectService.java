@@ -54,6 +54,7 @@ public class WifiAutoConnectService extends Service {
     public void onDestroy() {
         super.onDestroy();
         unregisterReceiver(wifiReceiver);
+        Log.e(TAG, "wifi广播监听注销");
     }
 
     private void wifiRegister(){
@@ -70,5 +71,6 @@ public class WifiAutoConnectService extends Service {
         filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         filter.addAction("TEST_ACTION");
         registerReceiver(wifiReceiver, filter);
+        Log.e(TAG, "wifi广播监听注册");
     }
 }

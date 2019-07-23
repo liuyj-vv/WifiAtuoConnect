@@ -214,12 +214,12 @@ public class LedControl {
                 Log.d(TAG, "interrupt led退出闪烁： " + isRuning + " " + cycleLedThread);
                 cycleLedThread.interrupt();
                 cycleLedThread.join();
-                cycleLedThread = null;
                 Log.d(TAG, "interrupt 线程退出");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+        cycleLedThread = null; //防止join函数出现异常而未成功执行
         lock.unlock();
     }
 }
