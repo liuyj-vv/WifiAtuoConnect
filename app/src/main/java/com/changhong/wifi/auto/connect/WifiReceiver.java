@@ -46,10 +46,10 @@ class WifiReceiver extends BroadcastReceiver {
 
         } else if (WifiManager.SUPPLICANT_STATE_CHANGED_ACTION.equals(action)) {
             SupplicantState supplicantState = intent.getParcelableExtra(WifiManager.EXTRA_NEW_STATE); //// 获取当前网络新状态.
-            int error = intent.getIntExtra(WifiManager.EXTRA_SUPPLICANT_ERROR, 0);      //// 获取当前网络连接状态码.
-            Log.i(TAG, "正在验证身份(SUPPLICANT_STATE_CHANGED_ACTION)");
+            int error = intent.getIntExtra(WifiManager.EXTRA_SUPPLICANT_ERROR, -1);      //// 获取当前网络连接状态码.
+            Log.i(TAG, "正在验证身份(SUPPLICANT_STATE_CHANGED_ACTION): " + supplicantState + " " + error);
 
-            wifiAutoConnectHelper.handlerSupplicant(wifiManager, connectivityManager, supplicantState, error);
+            wifiAutoConnectHelper.handlerSupplicant(context, wifiManager, connectivityManager, supplicantState, error);
 
         } else if (WifiManager.NETWORK_STATE_CHANGED_ACTION.equals(action)) {
             //这三个方法能够获取手机当前连接的Wifi信息，注意在wifi断开时Intent中不包含WifiInfo对象，却包含bssid。

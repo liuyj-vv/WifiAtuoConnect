@@ -1,5 +1,6 @@
 package com.changhong.wifi.auto.connect;
 
+import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
@@ -10,8 +11,10 @@ import android.os.Build;
 import android.os.RemoteException;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
@@ -27,12 +30,16 @@ public class WifiAutoConnectHelper {
     Thread cyclePingThread = null;
 
     String  wifiType, ssid, passwd, repeate, host,count,timeout,datasize;
+//    #指定ping成功后，自动启动以下应用（包名称+类名称）。如果有多个应用，以空格区分。
+//    ping_ok_do=com.changhong.vod/.RootActivity com.changhong.vod1/.RootActivity1 com.changhong.vod2/.RootActivity3
+    String[] ping_ok_do = null;
 
     static String keyWifiType = "wifiType";
     static String keySsid = "ssid";
     static String keyPasswd = "passwd";
     static String keyRepeate = "ping_repeate";
     static String keyparameter = "ping_parameter";
+    static String keyPing_ok_do= "ping_ok_do";
     static String configFile = "/mnt/sda/sda1/ch_auto_test_wifi.cfg";
     static String logFile;
 //    ExecCommand execCommand = new ExecCommand();
@@ -61,6 +68,7 @@ public class WifiAutoConnectHelper {
         String[] passwd = new String[1];
         String[] ping_repeate= new String[1];
         String[] ping_parameter = new String[1];
+        String[] ping_ok_do_line = new String[1];
         File file = new File(configFile);
         if (!file.exists()) {
             Log.i(TAG, "文件 "+ configFile +" 不存在");
@@ -79,6 +87,7 @@ public class WifiAutoConnectHelper {
                     + ", count: " + this.count
                     + ", timeout: " + this.timeout
                     + ", datasize: " + this.datasize
+                    + ", ping_ok_do: " + ping_ok_do
             );
             return true;
         }
@@ -122,6 +131,18 @@ public class WifiAutoConnectHelper {
             this.datasize = parameter[3];
         }
 
+        if (false == FileKeyValueOP.readFileKeyValue(configFile, keyRepeate, ping_repeate)) {
+            ping_repeate[0] = "";
+        }
+        this.repeate = ping_repeate[0];
+
+
+        if (false == FileKeyValueOP.readFileKeyValue(configFile, keyPing_ok_do, ping_ok_do_line)) {
+            ping_ok_do = null;
+        } else {
+            this.ping_ok_do = ping_ok_do_line[0].trim().split("\\s");
+        }
+
         Log.d(TAG,  "配置信息，wifiType: " + this.wifiType
                 + ", ssid: " + this.ssid
                 + ", passwd: " + this.passwd
@@ -130,8 +151,21 @@ public class WifiAutoConnectHelper {
                 + ", count: " + this.count
                 + ", timeout: " + this.timeout
                 + ", datasize: " + this.datasize
+                + ", ping_ok_do: " + ping_ok_do
         );
         return true;
+    }
+
+    public void launchAPP() {
+        if (null != ping_ok_do) {
+            for (int i=0; i<ping_ok_do.length; i++) {
+                try {
+                    Runtime.getRuntime().exec("am start -n " + ping_ok_do[i]);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -222,7 +256,7 @@ public class WifiAutoConnectHelper {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    public  void handlerSupplicant(WifiManager wifiManager, ConnectivityManager connectivityManager, SupplicantState supplicantState, int errNo) {
+    public  void handlerSupplicant(Context context, WifiManager wifiManager, ConnectivityManager connectivityManager, SupplicantState supplicantState, int errNo) {
         WifiInfo wifiInfo = wifiManager.getConnectionInfo();
 
         if (DISCONNECTED == supplicantState) {
@@ -240,6 +274,10 @@ public class WifiAutoConnectHelper {
         }
          if (COMPLETED == supplicantState) {
             startPingTest(wifiManager, connectivityManager);
+        }
+
+        if(errNo == WifiManager.ERROR_AUTHENTICATING){
+            Log.i(TAG, "ERROR_AUTHENTICATING 身份验证不通过!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         }
 
         Log.i(TAG, "" + supplicantState + ", ssid: " + wifiInfo.getSSID());
