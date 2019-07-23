@@ -341,7 +341,6 @@ public class WifiAutoConnectHelper {
                                     execCommand.run(processBuilder);
                                     execCommand.printStdoutMessage(logFile, "stdout");
                                     execCommand.printStderrMessage(logFile, "stderr");
-                                    LedControl.ledWifiConnect_dhcp_succesful();
 
                                     isNotFirstRun = true;
                                 } catch (InterruptedException e) {
@@ -354,6 +353,7 @@ public class WifiAutoConnectHelper {
                         }
                     });
                     cyclePingThread.start();
+                    LedControl.ledWifiConnect_dhcp_succesful();
                     Log.i(TAG, "开启定时启动的ping测试, iRrepeateTime: " + iRrepeateTime);
                     lock.unlock();
                     return true;
