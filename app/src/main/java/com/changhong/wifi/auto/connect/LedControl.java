@@ -7,6 +7,8 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.locks.ReentrantLock;
 
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -59,11 +61,11 @@ public class LedControl {
         }
     }
 
-    static List<Thread> threadList = new ArrayList<>();
+    static Thread cycleLedThread = null;    //同一时刻只能有一个灯的状态，闪烁也只可能有一种。
 
     //未连接，同时也没有开始连接
     public static void ledWifiConnect_no() {
-        Log.e(TAG, "============= 连接断开，没有连接");
+        Log.e(TAG, "============= 连接断开，没有连接: " + stateCurr);
 
         if (stateCurr == State.Connect_no) {
             return;
@@ -77,7 +79,7 @@ public class LedControl {
 
     //正在连接到wifi
     public static void ledWifiConnect_ing() {
-        Log.e(TAG, "============= 正在连接");
+        Log.e(TAG, "============= 正在连接: " + stateCurr);
 
         if (stateCurr == State.Connect_ing) {
             return;
@@ -91,7 +93,7 @@ public class LedControl {
 
     //dhcp获取ip成功
     public static void ledWifiConnect_dhcp_succesful() {
-        Log.e(TAG, "============= 连接成功，且dhcp获取成功");
+        Log.e(TAG, "============= 连接成功，且dhcp获取成功: " + stateCurr);
 
         if (stateCurr == State.Connect_dhcp_successful) {
             return;
@@ -105,7 +107,7 @@ public class LedControl {
 
     //正在进行ping测试
     public static void ledWifiPing_ing() {
-        Log.e(TAG, "============= 进行ping测试");
+        Log.e(TAG, "============= 进行ping测试: " + stateCurr);
 
         if (stateCurr == State.Ping_ing) {
             return;
@@ -120,7 +122,7 @@ public class LedControl {
 
     //ping失败
     public static void ledWifiPing_failure() {
-        Log.e(TAG, "============= ping测试失败");
+        Log.e(TAG, "============= ping测试失败: " + stateCurr);
 
         if (stateCurr == State.Ping_faile) {
             return;
@@ -136,7 +138,7 @@ public class LedControl {
 
     //ping成功
     public static void ledWifiPingSuccessful() {
-        Log.e(TAG, "============= ping测试成功");
+        Log.e(TAG, "============= ping测试成功: " + stateCurr);
 
         if (stateCurr == State.Ping_successful) {
             return;
@@ -166,8 +168,10 @@ public class LedControl {
         }).start();
     }
 
+    static private ReentrantLock lock = new ReentrantLock(); // 需要保证多个线程使用的是同一个锁
     static private void ledCycle(final int s) {
-        Thread thread = new Thread(new Runnable() {
+        lock.lock();
+        cycleLedThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 isRuning = true;
@@ -191,23 +195,24 @@ public class LedControl {
                 Log.e(TAG, "线程结束部分");
             }
         });
-        threadList.add(thread);
-        thread.start();
+        cycleLedThread.start();
+        lock.unlock();
     }
 
     static boolean isRuning = false;
     static private void ledCloseAllCycle() {
-        for (int index=0; index<threadList.size(); index++) {
+        lock.lock();
+        if (null != cycleLedThread) {
             try {
                 isRuning = false;
-                threadList.get(index).interrupt();
-                Log.e(TAG, "interrupt 输入");
-                threadList.get(index).join();
+                cycleLedThread.interrupt();
+                cycleLedThread.join();
+                cycleLedThread = null;
                 Log.e(TAG, "interrupt 线程退出");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-        threadList.clear();
+        lock.unlock();
     }
 }
