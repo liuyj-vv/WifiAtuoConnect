@@ -174,10 +174,13 @@ public class WifiAutoConnectHelper {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    public void handlerScanResults(WifiManager wifiManager) {
+    public void handlerScanResults(WifiManager wifiManager, ConnectivityManager connectivityManager) {
         WifiInfo wifiInfo = wifiManager.getConnectionInfo();
         List<ScanResult> scanResultList = wifiManager.getScanResults();
         if (null != wifiInfo && null != wifiInfo.getSSID()) {
+
+            startPingTest(wifiManager, connectivityManager);
+
             if(!readConfig()){
                 return;
             }

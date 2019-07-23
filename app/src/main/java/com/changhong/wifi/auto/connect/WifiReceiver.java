@@ -42,7 +42,7 @@ class WifiReceiver extends BroadcastReceiver {
             //扫描到一个热点, 并且此热点达可用状态会触发此广播
             //你可以从intent中取出一个boolean值; 如果此值为true, 代表着扫描热点已完全成功; 为false, 代表此次扫描不成功, ScanResult 距离上次扫描并未得到更新（可能存在）;
             Log.i(TAG, "扫描结果(SCAN_RESULTS_AVAILABLE_ACTION) ");
-            wifiAutoConnectHelper.handlerScanResults(wifiManager);
+            wifiAutoConnectHelper.handlerScanResults(wifiManager, connectivityManager);
 
         } else if (WifiManager.SUPPLICANT_STATE_CHANGED_ACTION.equals(action)) {
             SupplicantState supplicantState = intent.getParcelableExtra(WifiManager.EXTRA_NEW_STATE); //// 获取当前网络新状态.
@@ -68,7 +68,7 @@ class WifiReceiver extends BroadcastReceiver {
         } else if (WifiManager.RSSI_CHANGED_ACTION.equals(action)) {
             int rssi = intent.getIntExtra(wifiManager.EXTRA_NEW_RSSI, 0);
             Log.i(TAG, "信号强度(RSSI_CHANGED_ACTION): " + rssi );
-            wifiAutoConnectHelper.handlerScanResults(wifiManager);
+            wifiAutoConnectHelper.handlerScanResults(wifiManager, connectivityManager);
         } else if("TEST_ACTION".equals(action)) {
             Log.i(TAG, "测试广播处理 " +action);
             int index;
