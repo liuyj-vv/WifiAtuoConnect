@@ -196,6 +196,7 @@ public class LedControl {
             }
         });
         cycleLedThread.start();
+        Log.e(TAG, "interrupt led启动闪烁： " + isRuning + " " + cycleLedThread + " " + s);
         lock.unlock();
     }
 
@@ -205,6 +206,7 @@ public class LedControl {
         if (null != cycleLedThread) {
             try {
                 isRuning = false;
+                Log.e(TAG, "interrupt led退出闪烁： " + isRuning + " " + cycleLedThread);
                 cycleLedThread.interrupt();
                 cycleLedThread.join();
                 cycleLedThread = null;
