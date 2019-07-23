@@ -36,6 +36,9 @@ public class WifiAutoConnectHelper {
     static String logFile =  "/mnt/sda/sda1/ch_auto_test_result.txt";
 //    ExecCommand execCommand = new ExecCommand();
     List<ExecCommand> execCommandList = new ArrayList<>();
+
+    static Long configFileLastModified = 0L;
+
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private boolean readConfig() {
         String[] wifiType = new String[1];
@@ -47,6 +50,13 @@ public class WifiAutoConnectHelper {
         if (!file.exists()) {
             Log.i(TAG, "文件 "+ configFile +" 不存在");
             return false;
+        }
+
+        if (0L == configFileLastModified || configFileLastModified != file.lastModified()) {
+            configFileLastModified = file.lastModified();
+        } else {
+            // 配置文件上次读取后，没有修改。
+            return true;
         }
 
         if (false == FileKeyValueOP.readFileKeyValue(configFile, keyWifiType, wifiType)) {

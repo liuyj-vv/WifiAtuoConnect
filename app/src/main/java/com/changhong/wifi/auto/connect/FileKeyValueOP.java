@@ -45,11 +45,12 @@ public class FileKeyValueOP {
                     }
                 }
             }
-            br.close();
             reader.close();
+            br.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         return false;
     }
 
@@ -65,8 +66,10 @@ public class FileKeyValueOP {
             return false;
         }
 
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(pathName, true))){
+        try (FileWriter fw = new FileWriter(pathName, true);
+             BufferedWriter bw = new BufferedWriter(fw)){
             bw.write(line+"\n");
+            bw.flush();
         } catch (IOException e) {
             e.printStackTrace();
             return false;
