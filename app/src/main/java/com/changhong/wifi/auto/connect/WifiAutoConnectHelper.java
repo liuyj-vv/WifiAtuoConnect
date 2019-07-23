@@ -325,8 +325,13 @@ public class WifiAutoConnectHelper {
                     cyclePingThread = new Thread(new Runnable() {
                         @Override
                         public void run() {
+                            boolean isNotFirstRun = false;
                             while (true) {
                                 try {
+                                    if (isNotFirstRun) {
+                                        Thread.sleep(iRrepeateTime*1000);
+                                    }
+
                                     ExecCommand execCommand = new ExecCommand();
                                     execCommandList.add(execCommand);
                                     execCommand.writeLogToFile(logFile, cmd, currIP , wifiInfo.getBSSID(), currWifiFrequency, wifiInfo.getSSID(), repeate);
@@ -336,7 +341,7 @@ public class WifiAutoConnectHelper {
                                     execCommand.printStderrMessage(logFile, "stderr");
                                     LedControl.ledWifiConnect_dhcp_succesful();
 
-                                    Thread.sleep(iRrepeateTime*1000);
+                                    isNotFirstRun = true;
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                     Log.i(TAG, "收到中断，停止定时ping测试的线程！！！");
