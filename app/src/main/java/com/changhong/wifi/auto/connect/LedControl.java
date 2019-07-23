@@ -65,7 +65,7 @@ public class LedControl {
 
     //未连接，同时也没有开始连接
     public static void ledWifiConnect_no() {
-        Log.e(TAG, "============= 连接断开，没有连接: " + stateCurr);
+        Log.d(TAG, "============= 连接断开，没有连接: " + stateCurr);
 
         if (stateCurr == State.Connect_no) {
             return;
@@ -79,7 +79,7 @@ public class LedControl {
 
     //正在连接到wifi
     public static void ledWifiConnect_ing() {
-        Log.e(TAG, "============= 正在连接: " + stateCurr);
+        Log.d(TAG, "============= 正在连接: " + stateCurr);
 
         if (stateCurr == State.Connect_ing) {
             return;
@@ -93,7 +93,7 @@ public class LedControl {
 
     //dhcp获取ip成功
     public static void ledWifiConnect_dhcp_succesful() {
-        Log.e(TAG, "============= 连接成功，且dhcp获取成功: " + stateCurr);
+        Log.d(TAG, "============= 连接成功，且dhcp获取成功: " + stateCurr);
 
         if (stateCurr == State.Connect_dhcp_successful) {
             return;
@@ -107,7 +107,7 @@ public class LedControl {
 
     //正在进行ping测试
     public static void ledWifiPing_ing() {
-        Log.e(TAG, "============= 进行ping测试: " + stateCurr);
+        Log.d(TAG, "============= 进行ping测试: " + stateCurr);
 
         if (stateCurr == State.Ping_ing) {
             return;
@@ -122,7 +122,7 @@ public class LedControl {
 
     //ping失败
     public static void ledWifiPing_failure() {
-        Log.e(TAG, "============= ping测试失败: " + stateCurr);
+        Log.d(TAG, "============= ping测试失败: " + stateCurr);
 
         if (stateCurr == State.Ping_faile) {
             return;
@@ -138,7 +138,7 @@ public class LedControl {
 
     //ping成功
     public static void ledWifiPingSuccessful() {
-        Log.e(TAG, "============= ping测试成功: " + stateCurr);
+        Log.d(TAG, "============= ping测试成功: " + stateCurr);
 
         if (stateCurr == State.Ping_successful) {
             return;
@@ -193,15 +193,15 @@ public class LedControl {
                         isNotFirstRun = true;
                     } catch (InterruptedException e) {
                         e.printStackTrace();
-                        Log.e(TAG, "线程 进入中断");
+                        Log.d(TAG, "线程 进入中断");
                         break;
                     }
                 }
-                Log.e(TAG, "线程结束部分");
+                Log.d(TAG, "线程结束部分");
             }
         });
         cycleLedThread.start();
-        Log.e(TAG, "interrupt led启动闪烁： " + isRuning + " " + cycleLedThread + " " + s);
+        Log.d(TAG, "interrupt led启动闪烁： " + isRuning + " " + cycleLedThread + " " + s);
         lock.unlock();
     }
 
@@ -211,11 +211,11 @@ public class LedControl {
         if (null != cycleLedThread) {
             try {
                 isRuning = false;
-                Log.e(TAG, "interrupt led退出闪烁： " + isRuning + " " + cycleLedThread);
+                Log.d(TAG, "interrupt led退出闪烁： " + isRuning + " " + cycleLedThread);
                 cycleLedThread.interrupt();
                 cycleLedThread.join();
                 cycleLedThread = null;
-                Log.e(TAG, "interrupt 线程退出");
+                Log.d(TAG, "interrupt 线程退出");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
