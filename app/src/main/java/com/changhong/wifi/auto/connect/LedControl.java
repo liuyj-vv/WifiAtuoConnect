@@ -1,14 +1,19 @@
 package com.changhong.wifi.auto.connect;
 
+import android.content.Context;
 import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -100,6 +105,7 @@ public class LedControl {
         } else {
             stateCurr = State.Connect_dhcp_successful;
         }
+
         ledCloseAllCycle();
 
         ledCycle(1000);
@@ -115,7 +121,6 @@ public class LedControl {
             stateCurr = State.Ping_ing;
         }
         ledCloseAllCycle();
-
 
         ledCycle(1000);
     }
@@ -137,7 +142,7 @@ public class LedControl {
 
 
     //ping成功
-    public static void ledWifiPing_successful() {
+    public static void ledWifiPing_successful(final Context context, final List<Map<String, String>> listMapPingOkDo) {
         Log.d(TAG, "============= ping测试成功: " + stateCurr);
 
         if (stateCurr == State.Ping_successful) {
@@ -148,8 +153,35 @@ public class LedControl {
         ledCloseAllCycle();
 
         ledON();
-    }
 
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String packageName;
+                String activityName;
+                for (int index=0; index<listMapPingOkDo.size(); index++) {
+                    packageName = listMapPingOkDo.get(index).get("package");
+                    activityName = listMapPingOkDo.get(index).get("activity");
+                    if (!Utils2.isAppExistence(context, packageName)) {
+                        // 系统中没有安装这个应用
+                        Log.i(TAG, "没有安装的应用: " + packageName);
+                        continue;
+                    }
+                    if (!Utils2.isAppAlive2(context, packageName)) {
+                        try {
+                            String cmd ="am start -n " + packageName + "/" + activityName;
+                            Log.i(TAG, "执行命令，启动应用: " + cmd);
+                            Runtime.getRuntime().exec(cmd);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        Log.i(TAG, "应用已启动: " + packageName);
+                    }
+                }
+            }
+        }).start();
+    }
 
     static private void ledON() {
         new Thread(new Runnable() {

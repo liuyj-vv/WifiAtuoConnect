@@ -10,6 +10,7 @@ import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.RemoteException;
 import android.support.annotation.RequiresApi;
+import android.util.ArrayMap;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -17,7 +18,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static android.net.wifi.SupplicantState.ASSOCIATING;
 import static android.net.wifi.SupplicantState.COMPLETED;
@@ -32,7 +36,8 @@ public class WifiAutoConnectHelper {
     String  wifiType, ssid, passwd, repeate, host,count,timeout,datasize;
 //    #指定ping成功后，自动启动以下应用（包名称+类名称）。如果有多个应用，以空格区分。
 //    ping_ok_do=com.changhong.vod/.RootActivity com.changhong.vod1/.RootActivity1 com.changhong.vod2/.RootActivity3
-    String[] ping_ok_do = null;
+
+    List<Map<String, String>> listMapPingOkDo = new ArrayList<>();
 
     static String keyWifiType = "wifiType";
     static String keySsid = "ssid";
@@ -42,7 +47,6 @@ public class WifiAutoConnectHelper {
     static String keyPing_ok_do= "ping_ok_do";
     static String configFile = "/mnt/sda/sda1/ch_auto_test_wifi.cfg";
     static String logFile;
-//    ExecCommand execCommand = new ExecCommand();
     List<ExecCommand> execCommandList = new ArrayList<>();
 
     static Long configFileLastModified = 0L;
@@ -70,12 +74,12 @@ public class WifiAutoConnectHelper {
         String[] wifiType = new String[1];
         String[] ssid = new String[1];
         String[] passwd = new String[1];
-        String[] ping_repeate= new String[1];
+        String[] ping_repeate = new String[1];
         String[] ping_parameter = new String[1];
         String[] ping_ok_do_line = new String[1];
         File file = new File(configFile);
         if (!file.exists()) {
-            Log.i(TAG, "文件 "+ configFile +" 不存在");
+            Log.i(TAG, "文件 " + configFile + " 不存在");
             return false;
         }
 
@@ -83,7 +87,7 @@ public class WifiAutoConnectHelper {
 
         } else {
             // 配置文件上次读取后，没有修改。
-            Log.d(TAG,  "配置信息（未重取），wifiType: " + this.wifiType
+            Log.d(TAG, "配置信息（未重取），wifiType: " + this.wifiType
                     + ", ssid: " + this.ssid
                     + ", passwd: " + this.passwd
                     + ", repeate: " + this.repeate
@@ -91,7 +95,7 @@ public class WifiAutoConnectHelper {
                     + ", count: " + this.count
                     + ", timeout: " + this.timeout
                     + ", datasize: " + this.datasize
-                    + ", ping_ok_do: " + ping_ok_do
+                    + ", listMapPingOkDo: " + this.listMapPingOkDo
             );
             return true;
         }
@@ -122,12 +126,12 @@ public class WifiAutoConnectHelper {
             return false;
         } else {
             String parameter[] = ping_parameter[0].split(",");
-            if(4 != parameter.length) {
+            if (4 != parameter.length) {
                 return false;
             }
             this.host = parameter[0];
-            if (0 ==  Integer.parseInt(parameter[1])) {
-                this.count = ""+1;  //零不能工作，修改为1
+            if (0 == Integer.parseInt(parameter[1])) {
+                this.count = "" + 1;  //零不能工作，修改为1
             } else {
                 this.count = parameter[1];
             }
@@ -142,12 +146,26 @@ public class WifiAutoConnectHelper {
 
 
         if (false == FileKeyValueOP.readFileKeyValue(configFile, keyPing_ok_do, ping_ok_do_line)) {
-            ping_ok_do = null;
+
         } else {
-            this.ping_ok_do = ping_ok_do_line[0].trim().split("\\s");
+            String[] ping_ok_do = ping_ok_do_line[0].trim().split("\\s");
+            Pattern pattern = Pattern.compile("(.*?)/(.*)");
+            Matcher matcher;
+
+            for (int i = 0; i < ping_ok_do.length; i++) {
+                matcher = pattern.matcher(ping_ok_do[i]);
+                if (matcher.find()) {
+                    //匹配出错，输入参数格式不对
+                    Map map = new ArrayMap();
+                    Log.d(TAG, "matcher.group(0): " + matcher.group(0) + ", matcher.group(1): " + matcher.group(1) + ", matcher.group(2): " + matcher.group(2));
+                    map.put("package", matcher.group(1));
+                    map.put("activity", matcher.group(2));
+                    listMapPingOkDo.add(map);
+                }
+            }
         }
 
-        Log.d(TAG,  "配置信息，wifiType: " + this.wifiType
+        Log.d(TAG, "配置信息，wifiType: " + this.wifiType
                 + ", ssid: " + this.ssid
                 + ", passwd: " + this.passwd
                 + ", repeate: " + this.repeate
@@ -155,23 +173,12 @@ public class WifiAutoConnectHelper {
                 + ", count: " + this.count
                 + ", timeout: " + this.timeout
                 + ", datasize: " + this.datasize
-                + ", ping_ok_do: " + ping_ok_do
+                + ", listMapPingOkDo: " + this.listMapPingOkDo
         );
         configFileLastModified = file.lastModified();
         return true;
     }
 
-    public void launchAPP() {
-        if (null != ping_ok_do) {
-            for (int i=0; i<ping_ok_do.length; i++) {
-                try {
-                    Runtime.getRuntime().exec("am start -n " + ping_ok_do[i]);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     public void handlerWifiState(WifiManager wifiManager) {
@@ -369,7 +376,7 @@ public class WifiAutoConnectHelper {
                 final String cmd = "ping"+ " -c " + count + " -s " + datasize + " -W " + timeout + " " + host;
                 if (0 == iRrepeateTime && null != scanResult) {
                     isPingTestRunging = true;
-                    ExecCommand execCommand = new ExecCommand();
+                    ExecCommand execCommand = new ExecCommand(context, listMapPingOkDo);
                     execCommandList.add(execCommand);
                     execCommand.writeLogToFile(logFile, cmd, currIP , wifiInfo.getBSSID(), currWifiFrequency, wifiInfo.getSSID(), repeate);
                     ProcessBuilder processBuilder = new ProcessBuilder("sh", "-c" , cmd);
@@ -392,7 +399,7 @@ public class WifiAutoConnectHelper {
                                         Thread.sleep(iRrepeateTime*1000);
                                     }
 
-                                    ExecCommand execCommand = new ExecCommand();
+                                    ExecCommand execCommand = new ExecCommand(context, listMapPingOkDo);
                                     execCommandList.add(execCommand);
                                     execCommand.writeLogToFile(logFile, cmd, currIP , wifiInfo.getBSSID(), currWifiFrequency, wifiInfo.getSSID(), repeate);
                                     ProcessBuilder processBuilder = new ProcessBuilder("sh", "-c" , cmd);

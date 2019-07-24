@@ -1,5 +1,6 @@
 package com.changhong.wifi.auto.connect;
 
+import android.content.Context;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
@@ -9,16 +10,25 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ExecCommand {
     String TAG = ExecCommand.class.getPackage().getName();
+    Context context;
+    List<Map<String, String>> listMapPingOkDo;
 
     Process process = null;
 
     String logFilename = "";
     String log = "";
+
+    ExecCommand(Context context, List<Map<String, String>> listMapPingOkDo) {
+        this.context = context;
+        this.listMapPingOkDo = listMapPingOkDo;
+    }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     Process run(final ProcessBuilder processBuilder) {
@@ -114,7 +124,7 @@ public class ExecCommand {
                             if (matcher.group(1).equals("100")) {   // 如果丢失率时 100%
                                 LedControl.ledWifiPing_failure();
                             } else {
-                                LedControl.ledWifiPing_successful();
+                                LedControl.ledWifiPing_successful(context, listMapPingOkDo);
                             }
                         }
 
@@ -131,7 +141,7 @@ public class ExecCommand {
                         matcher = pattern.matcher(line);
                         if (matcher.find()) {
                             Log.d(TAG, "key: "+key + " ==== " + matcher.group());
-                            LedControl.ledWifiPing_successful();
+                            LedControl.ledWifiPing_successful(context, listMapPingOkDo);
                         }
 
                         key = "unknown host";
