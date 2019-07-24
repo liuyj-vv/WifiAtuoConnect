@@ -7,7 +7,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 public class BootCompletedReceiver extends BroadcastReceiver {
-    String TAG = BootCompletedReceiver.class.getSimpleName();
+    String TAG = BootCompletedReceiver.class.getPackage().getName();
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"]");

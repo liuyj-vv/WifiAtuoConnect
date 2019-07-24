@@ -76,8 +76,17 @@ public class WifiAutoConnectHelper {
         this.context = context;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+
     private boolean readConfig() {
+        if (!readConfig_()) {
+            LedControl.ledWifiConnect_no();
+            return false;
+        }
+        return true;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    private boolean readConfig_() {
         String[] wifiType = new String[1];
         String[] ssid = new String[1];
         String[] passwd = new String[1];
@@ -183,7 +192,12 @@ public class WifiAutoConnectHelper {
         }
         this.wifi_ip_cfg = wifi_ip_cfg[0].trim();
 
-        if (this.wifi_ip_cfg.equals("1")) {
+        if (!wifi_ip_cfg.equals("static") || !wifi_ip.equals("dhcp")) {
+        } else {
+            return false;
+        }
+
+        if (this.wifi_ip_cfg.equals("static")) {
             if (false == FileKeyValueOP.readFileKeyValue(configFile, keyWifi_ip, wifi_ip)) {
                 return false;
             }else {
@@ -199,7 +213,7 @@ public class WifiAutoConnectHelper {
             }
         }
 
-        Log.d(TAG, "配置信息，wifiType: " + this.wifiType
+        Log.i(TAG, "配置信息，wifiType: " + this.wifiType
                 + ", ssid: " + this.ssid
                 + ", passwd: " + this.passwd
                 + ", repeate: " + this.repeate
@@ -281,6 +295,7 @@ public class WifiAutoConnectHelper {
             startPingTest(wifiManager, connectivityManager);
 
             if(!readConfig()){
+                Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 配置文件读取错误");
                 return;
             }
 
@@ -299,6 +314,7 @@ public class WifiAutoConnectHelper {
         } else {
             //没有连接wifi
             if(!readConfig()){
+                Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 配置文件读取错误");
                 return;
             }
             connectConfigWIFI(wifiManager);
@@ -309,22 +325,40 @@ public class WifiAutoConnectHelper {
     public  void handlerSupplicant(Context context, WifiManager wifiManager, ConnectivityManager connectivityManager, SupplicantState supplicantState, int errNo) {
         WifiInfo wifiInfo = wifiManager.getConnectionInfo();
 
+        if (!readConfig()) {
+            Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 配置文件读取错误");
+            return;
+        }
+
         if (DISCONNECTED == supplicantState) {
             LedControl.ledWifiConnect_no();
             destroyPingTest();
         }
         if (ASSOCIATING == supplicantState) {
-            if (!readConfig()) {
-                return;
-            }
             if (!wifiIsConfigssid(wifiInfo)) {
                 return;
             }
             LedControl.ledWifiConnect_ing();
         }
          if (COMPLETED == supplicantState) {
-            startPingTest(wifiManager, connectivityManager);
-        }
+             try {
+                 String type = SetWifiState.getDeviceWLANAddressingType(context);
+                 Log.e(TAG, "TYPE: " + type);
+                 if (type.equals(wifi_ip_cfg)) {
+                     startPingTest(wifiManager, connectivityManager);
+                 } else {
+                     if (wifi_ip_cfg.equals("static")) {
+                         SetWifiState.setWifiStaticIP(context, wifi_ip, Utils.calcPrefixLengthByMack(wifi_mask), wifi_gateway, "0.0.0.0");
+                         startPingTest(wifiManager, connectivityManager);
+                     } else {
+                         SetWifiState.setWifiDHCPIP(context);
+                         startPingTest(wifiManager, connectivityManager);
+                     }
+                 }
+             } catch (RemoteException e) {
+                 e.printStackTrace();
+             }
+         }
 
         if(errNo == WifiManager.ERROR_AUTHENTICATING){
             Log.i(TAG, "ERROR_AUTHENTICATING 身份验证不通过!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
@@ -335,15 +369,35 @@ public class WifiAutoConnectHelper {
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     public  void handlefNetwork(WifiManager wifiManager, ConnectivityManager connectivityManager, NetworkInfo networkInfo, WifiInfo wifiInfo, String bssid) {
-
-        Log.i(TAG, "" + networkInfo);
+        if (!readConfig()) {
+            Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 配置文件读取错误");
+            return;
+        }
 
         if (NetworkInfo.DetailedState.DISCONNECTED == networkInfo.getDetailedState()) {
             destroyPingTest();
             LedControl.ledWifiConnect_no();
         }
+
         if (NetworkInfo.DetailedState.CONNECTED == networkInfo.getDetailedState()) {
-            startPingTest(wifiManager, connectivityManager);
+//            startPingTest(wifiManager, connectivityManager);
+            try {
+                String type = SetWifiState.getDeviceWLANAddressingType(context);
+                Log.e(TAG, "TYPE: " + type);
+                if (type.equals(wifi_ip_cfg)) {
+                    startPingTest(wifiManager, connectivityManager);
+                } else {
+                    if (wifi_ip_cfg.equals("static")) {
+                        SetWifiState.setWifiStaticIP(context, wifi_ip, Utils.calcPrefixLengthByMack(wifi_mask), wifi_gateway, "0.0.0.0");
+                        startPingTest(wifiManager, connectivityManager);
+                    } else {
+                        SetWifiState.setWifiDHCPIP(context);
+                        startPingTest(wifiManager, connectivityManager);
+                    }
+                }
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
     }
 
