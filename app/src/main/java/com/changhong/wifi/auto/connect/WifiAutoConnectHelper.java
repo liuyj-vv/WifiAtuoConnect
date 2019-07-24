@@ -28,7 +28,7 @@ public class WifiAutoConnectHelper {
     String TAG = this.getClass().getPackage().getName();
     boolean isPingTestRunging = false;
     Thread cyclePingThread = null;
-
+    Context context;
     String  wifiType, ssid, passwd, repeate, host,count,timeout,datasize;
 //    #指定ping成功后，自动启动以下应用（包名称+类名称）。如果有多个应用，以空格区分。
 //    ping_ok_do=com.changhong.vod/.RootActivity com.changhong.vod1/.RootActivity1 com.changhong.vod2/.RootActivity3
@@ -61,6 +61,10 @@ public class WifiAutoConnectHelper {
         }
     }
 
+    WifiAutoConnectHelper(Context context) {
+        this.context = context;
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private boolean readConfig() {
         String[] wifiType = new String[1];
@@ -76,7 +80,7 @@ public class WifiAutoConnectHelper {
         }
 
         if (0L == configFileLastModified || configFileLastModified != file.lastModified()) {
-            configFileLastModified = file.lastModified();
+
         } else {
             // 配置文件上次读取后，没有修改。
             Log.d(TAG,  "配置信息（未重取），wifiType: " + this.wifiType
@@ -153,6 +157,7 @@ public class WifiAutoConnectHelper {
                 + ", datasize: " + this.datasize
                 + ", ping_ok_do: " + ping_ok_do
         );
+        configFileLastModified = file.lastModified();
         return true;
     }
 

@@ -21,15 +21,17 @@ class WifiReceiver extends BroadcastReceiver {
     String TAG = WifiReceiver.class.getPackage().getName();
     WifiManager wifiManager;
     ConnectivityManager connectivityManager;
-    static WifiAutoConnectHelper wifiAutoConnectHelper = new WifiAutoConnectHelper();
-
-    static boolean isBootFristRun = true;
+    static WifiAutoConnectHelper wifiAutoConnectHelper = null;
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
+
+        if (null == wifiAutoConnectHelper) {
+            wifiAutoConnectHelper = new WifiAutoConnectHelper(context);
+        }
 
         wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         connectivityManager = (ConnectivityManager) context.getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -74,15 +76,21 @@ class WifiReceiver extends BroadcastReceiver {
             int index;
             List<ScanResult> scanResultList = wifiManager.getScanResults();
 
-            for (index=0; index<scanResultList.size(); index++) {
-                Log.i(TAG, scanResultList.get(index).BSSID
-                        + ",  " + scanResultList.get(index).frequency
-                        + ",  " + scanResultList.get(index).level
-                        + ",  " + scanResultList.get(index).describeContents()
-                        + ",  " + scanResultList.get(index).SSID
-                        + ",  " + scanResultList.get(index).capabilities);
-            }
+//            for (index=0; index<scanResultList.size(); index++) {
+//                Log.i(TAG, scanResultList.get(index).BSSID
+//                        + ",  " + scanResultList.get(index).frequency
+//                        + ",  " + scanResultList.get(index).level
+//                        + ",  " + scanResultList.get(index).describeContents()
+//                        + ",  " + scanResultList.get(index).SSID
+//                        + ",  " + scanResultList.get(index).capabilities);
+//            }
 
+
+
+            Utils2.isAppAlive(context, "com.changhong.vod2/.RootActivity3");
+            Utils2.isMainActivityAlive(context, "com.changhong.vod2/.RootActivity3");
+            Utils2.isServiceRunning(context, "com.changhong.vod2/.RootActivity3");
+            Utils2.isTopActivity(context, "com.changhong.vod2/.RootActivity3");
         } else {
             Log.i(TAG, "错误匹配, 未处理的广播: " +action);
         }
