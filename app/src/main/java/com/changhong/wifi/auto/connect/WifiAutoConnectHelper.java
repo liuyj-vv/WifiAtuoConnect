@@ -38,6 +38,11 @@ public class WifiAutoConnectHelper {
 //    ping_ok_do=com.changhong.vod/.RootActivity com.changhong.vod1/.RootActivity1 com.changhong.vod2/.RootActivity3
 
     List<Map<String, String>> listMapPingOkDo = new ArrayList<>();
+    String wifi_ip_cfg;
+    String wifi_ip;
+    String wifi_mask;
+    String wifi_gateway;
+
 
     static String keyWifiType = "wifiType";
     static String keySsid = "ssid";
@@ -45,6 +50,8 @@ public class WifiAutoConnectHelper {
     static String keyRepeate = "ping_repeate";
     static String keyparameter = "ping_parameter";
     static String keyPing_ok_do= "ping_ok_do";
+    static String keyWifi_ip_cfg= "wifi_ip_cfg";
+    static String keyWifi_ip= "wifi_ip";
     static String configFile = "/mnt/sda/sda1/ch_auto_test_wifi.cfg";
     static String logFile;
     List<ExecCommand> execCommandList = new ArrayList<>();
@@ -77,6 +84,8 @@ public class WifiAutoConnectHelper {
         String[] ping_repeate = new String[1];
         String[] ping_parameter = new String[1];
         String[] ping_ok_do_line = new String[1];
+        String[] wifi_ip_cfg = new String[1];
+        String[] wifi_ip = new String[1];
         File file = new File(configFile);
         if (!file.exists()) {
             Log.i(TAG, "文件 " + configFile + " 不存在");
@@ -96,6 +105,10 @@ public class WifiAutoConnectHelper {
                     + ", timeout: " + this.timeout
                     + ", datasize: " + this.datasize
                     + ", listMapPingOkDo: " + this.listMapPingOkDo
+                    + ", wifi_ip_cfg: " + this.wifi_ip_cfg
+                    + ", wifi_ip: " + this.wifi_ip
+                    + ", wifi_mask: " + this.wifi_mask
+                    + ", wifi_gateway: " + this.wifi_gateway
             );
             return true;
         }
@@ -165,6 +178,27 @@ public class WifiAutoConnectHelper {
             }
         }
 
+        if (false == FileKeyValueOP.readFileKeyValue(configFile, keyWifi_ip_cfg, wifi_ip_cfg)) {
+            return false;
+        }
+        this.wifi_ip_cfg = wifi_ip_cfg[0].trim();
+
+        if (this.wifi_ip_cfg.equals("1")) {
+            if (false == FileKeyValueOP.readFileKeyValue(configFile, keyWifi_ip, wifi_ip)) {
+                return false;
+            }else {
+                String[] tmp = wifi_ip[0].trim().split("\\|");
+                Log.i(TAG, tmp.toString());
+                if (3 != tmp.length) {
+                    return false;
+                } else {
+                    this.wifi_ip = tmp[0].trim();
+                    this.wifi_mask = tmp[1].trim();
+                    this.wifi_gateway = tmp[2].trim();
+                }
+            }
+        }
+
         Log.d(TAG, "配置信息，wifiType: " + this.wifiType
                 + ", ssid: " + this.ssid
                 + ", passwd: " + this.passwd
@@ -174,6 +208,10 @@ public class WifiAutoConnectHelper {
                 + ", timeout: " + this.timeout
                 + ", datasize: " + this.datasize
                 + ", listMapPingOkDo: " + this.listMapPingOkDo
+                + ", wifi_ip_cfg: " + this.wifi_ip_cfg
+                + ", wifi_ip: " + this.wifi_ip
+                + ", wifi_mask: " + this.wifi_mask
+                + ", wifi_gateway: " + this.wifi_gateway
         );
         configFileLastModified = file.lastModified();
         return true;
