@@ -149,7 +149,7 @@ public class WifiAutoConnectHelper {
 
         } else {
             String[] ping_ok_do = ping_ok_do_line[0].trim().split("\\s");
-            Pattern pattern = Pattern.compile("(.*?)/(.*)");
+            Pattern pattern = Pattern.compile("(.*?)/\\.(.*)");
             Matcher matcher;
 
             for (int i = 0; i < ping_ok_do.length; i++) {

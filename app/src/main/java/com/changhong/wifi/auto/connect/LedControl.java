@@ -162,14 +162,14 @@ public class LedControl {
                 for (int index=0; index<listMapPingOkDo.size(); index++) {
                     packageName = listMapPingOkDo.get(index).get("package");
                     activityName = listMapPingOkDo.get(index).get("activity");
-                    if (!Utils2.isAppExistence(context, packageName)) {
+                    if (!Utils2.isAppAndActivityExistence(context, packageName, activityName)) {
                         // 系统中没有安装这个应用
-                        Log.i(TAG, "没有安装的应用: " + packageName);
+                        Log.i(TAG, "在系统中不存在 包名/.类名: " + packageName+"/."+activityName);
                         continue;
                     }
                     if (!Utils2.isAppAlive2(context, packageName)) {
                         try {
-                            String cmd ="am start -n " + packageName + "/" + activityName;
+                            String cmd ="am start -n " + packageName + "/." + activityName;
                             Log.i(TAG, "执行命令，启动应用: " + cmd);
                             Runtime.getRuntime().exec(cmd);
                         } catch (IOException e) {
