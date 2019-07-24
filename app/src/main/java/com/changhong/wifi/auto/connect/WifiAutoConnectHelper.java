@@ -77,8 +77,9 @@ public class WifiAutoConnectHelper {
     }
 
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private boolean readConfig() {
-        if (!readConfig_()) {
+        if (!readConfig_1()) {
             LedControl.ledWifiConnect_no();
             return false;
         }
@@ -86,7 +87,7 @@ public class WifiAutoConnectHelper {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    private boolean readConfig_() {
+    private boolean readConfig_1() {
         String[] wifiType = new String[1];
         String[] ssid = new String[1];
         String[] passwd = new String[1];
@@ -260,7 +261,7 @@ public class WifiAutoConnectHelper {
             if (wifiInfo.getSSID().equals("\"" + ssid + "\"")
                     && ("\"" + ssid + "\"").equals(wifiInfo.getSSID())) {
                 //连接上的热点就是配置文件中的热点，直接退出
-                Log.i(TAG, Thread.currentThread().getStackTrace()[3].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 正在连接的热点就是配置文件中的热点: " + wifiInfo.getSSID());
+                Log.i(TAG, Thread.currentThread().getStackTrace()[3].getMethodName()+ ": 正在连接的热点就是配置文件中的热点: " + wifiInfo.getSSID());
                 return true;
             }
         }
@@ -459,7 +460,7 @@ public class WifiAutoConnectHelper {
                     }
                 }
                 if (scanResultList.size() == index) {
-                    Log.e(TAG, "不应该到这儿来");
+                    Log.e(TAG, "当前连接的wifi BSSID，在扫描到的列表中不存在: " + wifiInfo.getBSSID());
                     return false;
                 }
 
