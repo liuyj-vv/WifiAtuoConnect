@@ -146,6 +146,14 @@ public class ExecCommand {
                             LedControl.ledWifiPing_failure();
                         }
 
+                        key = "Destination Host Unreachable";
+                        pattern = Pattern.compile(key);
+                        matcher = pattern.matcher(line);
+                        if (matcher.find()) {
+                            Log.d(TAG, "key: "+key + " ==== " + matcher.group());
+                            LedControl.ledWifiPing_failure();
+                        }
+
                         key = "time=.*? ms";
                         pattern = Pattern.compile(key);   // 收到ping正确的返回
                         matcher = pattern.matcher(line);
