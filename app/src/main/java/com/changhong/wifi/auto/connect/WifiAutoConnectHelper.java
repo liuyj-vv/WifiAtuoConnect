@@ -405,39 +405,47 @@ public class WifiAutoConnectHelper {
         if (ASSOCIATING == supplicantState) {
             //尝试连接到wifi
             if (!wifiIsConfigssid(wifiInfo)) {
-                //连接得wifi不是配置文件中得wifi
+                //连接的wifi不是配置文件中得wifi，尝试连接到配置文件中的wifi
+                List<ScanResult> scanResultList = wifiManager.getScanResults();
+                if (null != scanResultList) {
+                    for (int index = 0; index < scanResultList.size(); index++) {
+                        if (scanResultList.get(index).SSID.equals(ssid)) {
+                            //扫描到的热点中存在配置文件中的ssid配置
+                            Log.i(TAG, "当前热点ssid为空，且未连接，开始连接: " + ssid);
+                            connectWifi(wifiManager, ssid, passwd, Integer.parseInt(wifiType));
+                        }
+                    }
+                }
                 return;
             }
             //灯闪烁
             LedControl.ledWifiConnect_ing();
         }
-         if (COMPLETED == supplicantState) {
-             try {
-                 String type = SetWifiState.getDeviceWLANAddressingType(context);
-                 Log.e(TAG, "TYPE: " + type);
-                 if (null == type) {
-                     //什么都不做
-                 } else if (type.equals(wifi_ip_cfg)) {
-                     startPingTest(wifiManager, connectivityManager);
-                 } else {
-                     if (wifi_ip_cfg.equals("static")) {
-                         SetWifiState.setWifiStaticIP(context, wifi_ip, Utils.calcPrefixLengthByMack(wifi_mask), wifi_gateway, "0.0.0.0");
-                         startPingTest(wifiManager, connectivityManager);
-                     } else {
-                         SetWifiState.setWifiDHCPIP(context);
-                         startPingTest(wifiManager, connectivityManager);
-                     }
-                 }
-             } catch (RemoteException e) {
-                 e.printStackTrace();
-             }
-         }
 
         if(errNo == WifiManager.ERROR_AUTHENTICATING){
             Log.i(TAG, "ERROR_AUTHENTICATING 身份验证不通过!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            return;
         }
 
-        Log.i(TAG, "" + supplicantState + ", ssid: " + wifiInfo.getSSID());
+         if (COMPLETED == supplicantState) {
+             if (!wifiIsConfigssid(wifiInfo)) {
+                 //连接的wifi不是配置文件中得wifi，尝试连接到配置文件中的wifi
+                 List<ScanResult> scanResultList = wifiManager.getScanResults();
+                 if (null != scanResultList) {
+                     for (int index = 0; index < scanResultList.size(); index++) {
+                         if (scanResultList.get(index).SSID.equals(ssid)) {
+                             //扫描到的热点中存在配置文件中的ssid配置
+                             Log.i(TAG, "当前热点ssid为空，且未连接，开始连接: " + ssid);
+                             connectWifi(wifiManager, ssid, passwd, Integer.parseInt(wifiType));
+                         }
+                     }
+                 }
+                 return;
+             }
+
+             //启动ping测试
+             startPingTest(wifiManager, connectivityManager);
+         }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
