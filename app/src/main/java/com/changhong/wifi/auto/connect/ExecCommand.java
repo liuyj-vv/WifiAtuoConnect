@@ -27,6 +27,8 @@ public class ExecCommand {
     String logFilename = "";
     String log = "";
 
+    String startPingTime;
+
     ExecCommand(Context context, List<Map<String, String>> listMapPingOkDo) {
         this.context = context;
         this.listMapPingOkDo = listMapPingOkDo;
@@ -39,7 +41,8 @@ public class ExecCommand {
         }
 
         try {
-            FileKeyValueOP.writeAddLineToFile(logFilename, Utils.getCurrDate() + "[START] " + log);
+            startPingTime =Utils.getCurrDate();
+            FileKeyValueOP.writeAddLineToFile(logFilename, startPingTime + "[START] " + log);
             Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] " + Utils.getCurrDate() + " 开始进行一次ping测试");
             process = processBuilder.start();
         } catch (IOException e) {
@@ -54,7 +57,7 @@ public class ExecCommand {
                 try {
                     process.waitFor();
                     Thread.sleep(50);
-                    FileKeyValueOP.writeAddLineToFile(logFilename, Utils.getCurrDate() + "[END]   " + log + "\n");
+                    FileKeyValueOP.writeAddLineToFile(logFilename, startPingTime +  "-->" +Utils.getCurrDate() + "[END]   " + log + "\n");
                     Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 一次ping测试结束了");
                     process = null;
                 } catch (InterruptedException e) {
