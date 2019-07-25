@@ -1,6 +1,7 @@
 package com.changhong.wifi.auto.connect;
 
 import android.content.Context;
+import android.os.RemoteException;
 import android.util.Log;
 
 import org.json.JSONException;
@@ -153,6 +154,13 @@ public class LedControl {
         ledCloseAllCycle();
 
         ledON();
+
+        try {
+            String type = SetWifiState.getDeviceWLANAddressingType(context);
+            Log.e(TAG, "TYPE: " + type);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
 
         new Thread(new Runnable() {
             @Override

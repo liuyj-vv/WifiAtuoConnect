@@ -37,13 +37,16 @@ class WifiReceiver extends BroadcastReceiver {
         connectivityManager = (ConnectivityManager) context.getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
 
         if (WifiManager.WIFI_STATE_CHANGED_ACTION.equals(action)) { // 这个监听wifi的打开与关闭，与wifi的连接无关
-            Log.i(TAG, "硬件状态(WIFI_STATE_CHANGED_ACTION)");
-            wifiAutoConnectHelper.handlerWifiState(wifiManager);
+            int wifiState = intent.getIntExtra(wifiManager.EXTRA_WIFI_STATE, -1);
+            Log.i(TAG, "硬件状态(WIFI_STATE_CHANGED_ACTION): " + wifiState);
+
+            wifiAutoConnectHelper.handlerWifiState(wifiManager, wifiState);
 
         } else if (WifiManager.SCAN_RESULTS_AVAILABLE_ACTION.equals(action)) {
             //扫描到一个热点, 并且此热点达可用状态会触发此广播
             //你可以从intent中取出一个boolean值; 如果此值为true, 代表着扫描热点已完全成功; 为false, 代表此次扫描不成功, ScanResult 距离上次扫描并未得到更新（可能存在）;
-            Log.i(TAG, "扫描结果(SCAN_RESULTS_AVAILABLE_ACTION) ");
+            Log.i(TAG, "扫描结果(SCAN_RESULTS_AVAILABLE_ACTION): " + wifiManager.getScanResults().size());
+
             wifiAutoConnectHelper.handlerScanResults(wifiManager, connectivityManager);
 
         } else if (WifiManager.SUPPLICANT_STATE_CHANGED_ACTION.equals(action)) {
@@ -58,7 +61,8 @@ class WifiReceiver extends BroadcastReceiver {
             NetworkInfo networkInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
             String bssid = intent.getStringExtra(WifiManager.EXTRA_BSSID);
             WifiInfo wifiInfo = intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
-            Log.i(TAG, "正在获取网络信息(SUPPLICANT_STATE_CHANGED_ACTION)");
+            Log.i(TAG, "正在获取网络信息(SUPPLICANT_STATE_CHANGED_ACTION): " + networkInfo.getDetailedState());
+
             wifiAutoConnectHelper.handlefNetwork(wifiManager, connectivityManager, networkInfo, wifiInfo, bssid);
 
         } else if (ConnectivityManager.CONNECTIVITY_ACTION.equals(action)) {
@@ -70,7 +74,9 @@ class WifiReceiver extends BroadcastReceiver {
         } else if (WifiManager.RSSI_CHANGED_ACTION.equals(action)) {
             int rssi = intent.getIntExtra(wifiManager.EXTRA_NEW_RSSI, 0);
             Log.i(TAG, "信号强度(RSSI_CHANGED_ACTION): " + rssi );
+
             wifiAutoConnectHelper.handlerScanResults(wifiManager, connectivityManager);
+
         } else if("TEST_ACTION".equals(action)) {
             Log.i(TAG, "测试广播处理 " +action);
             int index;

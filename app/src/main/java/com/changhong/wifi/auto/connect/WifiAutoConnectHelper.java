@@ -5,6 +5,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
+import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
@@ -234,10 +235,11 @@ public class WifiAutoConnectHelper {
 
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    public void handlerWifiState(WifiManager wifiManager) {
+    public void handlerWifiState(WifiManager wifiManager, int wifiState) {
         WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+        Log.i(TAG, wifiInfo.toString());
 
-        if (WIFI_STATE_ENABLED != wifiManager.getWifiState()) {
+        if (WIFI_STATE_ENABLED != wifiState) {
             destroyPingTest();
             LedControl.ledWifiConnect_no();
             return;
@@ -247,7 +249,6 @@ public class WifiAutoConnectHelper {
             Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 配置文件读取错误");
             return;
         }
-        Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] ");
 
         if(wifiIsConfigssid(wifiInfo)) {
             return;
@@ -291,17 +292,24 @@ public class WifiAutoConnectHelper {
     public void handlerScanResults(WifiManager wifiManager, ConnectivityManager connectivityManager) {
         WifiInfo wifiInfo = wifiManager.getConnectionInfo();
         List<ScanResult> scanResultList = wifiManager.getScanResults();
+
+        try {
+            String type = SetWifiState.getDeviceWLANAddressingType(context);
+            Log.e(TAG, "TYPE: " + type);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+
         if (null != wifiInfo && null != wifiInfo.getSSID()) {
-
-            startPingTest(wifiManager, connectivityManager);
-
             if(!readConfig()){
                 Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 配置文件读取错误");
                 return;
             }
 
+            startPingTest(wifiManager, connectivityManager);
+
             if (!scanResultsIsContainConfigssid(scanResultList)) {
-                Log.e(TAG, "扫描到的热点没有配置文件中的ssid");
+                Log.e(TAG, "扫描到的热点没有配置文件中的ssid, 当前连接: " + wifiInfo.getSSID());
                 return;
             }
 
@@ -325,7 +333,7 @@ public class WifiAutoConnectHelper {
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     public  void handlerSupplicant(Context context, WifiManager wifiManager, ConnectivityManager connectivityManager, SupplicantState supplicantState, int errNo) {
         WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-
+        Log.i(TAG, wifiInfo.toString());
         if (!readConfig()) {
             Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 配置文件读取错误");
             return;
@@ -345,7 +353,9 @@ public class WifiAutoConnectHelper {
              try {
                  String type = SetWifiState.getDeviceWLANAddressingType(context);
                  Log.e(TAG, "TYPE: " + type);
-                 if (type.equals(wifi_ip_cfg)) {
+                 if (null == type) {
+                     //什么都不做
+                 } else if (type.equals(wifi_ip_cfg)) {
                      startPingTest(wifiManager, connectivityManager);
                  } else {
                      if (wifi_ip_cfg.equals("static")) {
@@ -370,6 +380,7 @@ public class WifiAutoConnectHelper {
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     public  void handlefNetwork(WifiManager wifiManager, ConnectivityManager connectivityManager, NetworkInfo networkInfo, WifiInfo wifiInfo, String bssid) {
+        Log.i(TAG, "wifiinfo: " + ((null==wifiInfo) ? null : wifiInfo.toString()));
         if (!readConfig()) {
             Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 配置文件读取错误");
             return;
@@ -524,12 +535,28 @@ public class WifiAutoConnectHelper {
     }
 
     private boolean connectConfigWIFI(WifiManager wifiManager) {
-        Log.i(TAG, "wifi连接到配置文件指定的热点 1, " + "ssid： " + ssid +  ", wifiType:" + wifiType);
-        int netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, Integer.parseInt(wifiType)));
-        if (-1 == netId) {
-            Log.i(TAG, "添加新的网络描述失败!!!");
-            return false;
+        WifiConfiguration wifiConfig = null;
+        int netId = 0;
+        WifiInfo wifiInfo = wifiManager.getConnectionInfo();  //得到连接的wifi网络
+        List<WifiConfiguration> configurationList = wifiManager.getConfiguredNetworks();
+        for (WifiConfiguration configuration : configurationList) {
+            if (configuration.SSID == ssid) {
+                wifiConfig = configuration;
+                netId = wifiConfig.networkId;
+                break;
+            }
         }
+
+        if (null == wifiConfig) {
+            netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, Integer.parseInt(wifiType)));
+            if (-1 == netId) {
+                Log.i(TAG, "添加新的网络到配置文件失败， " + "ssid： " + ssid +  ", wifiType:" + wifiType + "====>> networkID: " + netId);
+                return false;
+            } else {
+                Log.i(TAG, "添加新的网络到配置文件成功， " + "ssid： " + ssid +  ", wifiType:" + wifiType + "====>> networkID: " + netId);
+            }
+        }
+
         boolean enable = wifiManager.enableNetwork(netId, true); //true连接新的网络
         if (false == enable) {
             Log.i(TAG, "将新的网络描述,使能失败!!!");

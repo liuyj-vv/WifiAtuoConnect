@@ -206,6 +206,10 @@ public class SetWifiState {
             }
         }
 
+        if (null == wifiConfig) {
+            return null;
+        }
+
         try {
             state = getFields(wifiConfig, "ipAssignment");
         } catch (Exception e) {
@@ -217,7 +221,7 @@ public class SetWifiState {
         } else if(state.toUpperCase().equals("DHCP".toUpperCase())){
             return "dhcp";
         } else {
-            return "null";
+            return null;
         }
     }
 
