@@ -78,17 +78,41 @@ public class WifiAutoConnectHelper {
     }
 
 
+    static int configNetworkID = -1;
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    private boolean readConfig() {
-        if (!readConfig_1()) {
+    private boolean readConfig__() {
+        if (!readConfig()) {
             LedControl.ledWifiConnect_no();
             return false;
+        } else {
+            //若盒子中未保存，尝试添加将配置文件中的wifi配置到盒子中
+            int index;
+            WifiManager wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+            ConnectivityManager connectivityManager = (ConnectivityManager) context.getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+            List<WifiConfiguration>  wifiConfigurationList = wifiManager.getConfiguredNetworks();
+            if (null != wifiConfigurationList) {
+                for (index=0; index<wifiConfigurationList.size(); index++) {
+                    if (wifiConfigurationList.get(index).SSID.equals(ssid)) {
+                        break;
+                    }
+                }
+                if (wifiConfigurationList.size() == index) {
+                    configNetworkID = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, Integer.parseInt(wifiType)));
+                    if (-1 == configNetworkID) {
+                        Log.i(TAG, "添加新的网络到配置文件失败， " + "ssid： " + ssid +  ", wifiType:" + wifiType + "====>> networkID: " + configNetworkID);
+                        return false;
+                    } else {
+                        Log.i(TAG, "添加新的网络到配置文件成功， " + "ssid： " + ssid +  ", wifiType:" + wifiType + "====>> networkID: " + configNetworkID);
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
-        return true;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    private boolean readConfig_1() {
+    private boolean readConfig() {
         String[] wifiType = new String[1];
         String[] ssid = new String[1];
         String[] passwd = new String[1];
@@ -245,16 +269,47 @@ public class WifiAutoConnectHelper {
             return;
         }
 
+        List<ScanResult>scanResultList = wifiManager.getScanResults();
+        if (null == scanResultList || 0 == scanResultList.size()) {
+            if (SupplicantState.SCANNING != wifiManager.getConnectionInfo().getSupplicantState()) {
+                //如果没有发现热点，且当前没有扫描
+                wifiManager.startScan();    //启动扫描
+            }
+            return;
+        }
+
         if(!readConfig()) {
             Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 配置文件读取错误");
             return;
         }
-
-        if(wifiIsConfigssid(wifiInfo)) {
-            return;
+        if (null != wifiInfo) {
+            if ( null == wifiInfo.getSSID()) {
+                //ssid还不能获取
+                if (ASSOCIATING != wifiInfo.getSupplicantState()) {
+                    //如果当前没有尝试连接到热点
+                    for (int index = 0; index < scanResultList.size(); index++) {
+                        if (scanResultList.get(index).SSID.equals(ssid)) {
+                            //扫描到的热点中存在配置文件中的ssid配置
+                            Log.i(TAG, "当前热点ssid为空，且未连接，开始连接: " + ssid);
+                            connectWifi(wifiManager, ssid, passwd, Integer.parseInt(wifiType));
+                        }
+                    }
+                }
+            } else {
+                //ssid已经存在了
+                if (wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
+                    //正在连接的ssid和配置文件中的相同
+                    Log.i(TAG, "正在连接的wifi热点就是配置中的wifi热点: " +wifiInfo.getSSID());
+                } else {
+                    //正在连接的ssid和配置文件中的不同
+                    Log.i(TAG, "尝试重新开始连接配置中的wifi: " +wifiInfo.getSSID() + "---->" + ssid);
+                    connectWifi(wifiManager, ssid, passwd, Integer.parseInt(wifiType));
+                }
+            }
+        } else {
+            //应该不存在
         }
 
-       connectConfigWIFI(wifiManager);
     }
 
     private boolean wifiIsConfigssid(WifiInfo wifiInfo) {
@@ -334,19 +389,26 @@ public class WifiAutoConnectHelper {
     public  void handlerSupplicant(Context context, WifiManager wifiManager, ConnectivityManager connectivityManager, SupplicantState supplicantState, int errNo) {
         WifiInfo wifiInfo = wifiManager.getConnectionInfo();
         Log.i(TAG, wifiInfo.toString());
+
+
+        if (DISCONNECTED == supplicantState) {
+            //断开连接
+            LedControl.ledWifiConnect_no();
+            destroyPingTest();
+        }
+
         if (!readConfig()) {
             Log.i(TAG, Thread.currentThread().getStackTrace()[2].getMethodName()+"["+Thread.currentThread().getStackTrace()[2].getLineNumber()+"] 配置文件读取错误");
             return;
         }
 
-        if (DISCONNECTED == supplicantState) {
-            LedControl.ledWifiConnect_no();
-            destroyPingTest();
-        }
         if (ASSOCIATING == supplicantState) {
+            //尝试连接到wifi
             if (!wifiIsConfigssid(wifiInfo)) {
+                //连接得wifi不是配置文件中得wifi
                 return;
             }
+            //灯闪烁
             LedControl.ledWifiConnect_ing();
         }
          if (COMPLETED == supplicantState) {
@@ -396,7 +458,7 @@ public class WifiAutoConnectHelper {
             try {
                 String type = SetWifiState.getDeviceWLANAddressingType(context);
                 Log.e(TAG, "TYPE: " + type);
-                if (type.equals(wifi_ip_cfg)) {
+                if (null != type && type.equals(wifi_ip_cfg)) {
                     startPingTest(wifiManager, connectivityManager);
                 } else {
                     if (wifi_ip_cfg.equals("static")) {
@@ -534,30 +596,57 @@ public class WifiAutoConnectHelper {
         return false;
     }
 
+
+    private boolean connectWifi(WifiManager wifiManager, String ssid, String passwd , int wifiType) {
+        int netId;
+        boolean enable;
+        boolean reconnect;
+        netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, wifiType));
+        if (-1 == netId) {
+            Log.i(TAG, "添加新的网络到配置文件失败， " + "ssid： " + ssid +  ", wifiType:" + wifiType + "====>> networkID: " + netId);
+        } else {
+            Log.i(TAG, "添加新的网络到配置文件成功， " + "ssid： " + ssid +  ", wifiType:" + wifiType + "====>> networkID: " + netId);
+        }
+
+        enable = wifiManager.enableNetwork(netId, true); //true连接新的网络
+        if (false == enable) {
+            Log.i(TAG, "将新的网络描述,使能失败!!!");
+            return false;
+        }
+        reconnect = wifiManager.reconnect();
+        if (false == reconnect) {
+            Log.i(TAG, "重新连接新的网络失败!!!");
+            return false;
+        }
+
+        Log.i(TAG, "完成重新连接网络到 ----> " + ssid);
+        return true;
+    }
+
     private boolean connectConfigWIFI(WifiManager wifiManager) {
-        WifiConfiguration wifiConfig = null;
-        int netId = 0;
-        WifiInfo wifiInfo = wifiManager.getConnectionInfo();  //得到连接的wifi网络
-        List<WifiConfiguration> configurationList = wifiManager.getConfiguredNetworks();
-        for (WifiConfiguration configuration : configurationList) {
-            if (configuration.SSID == ssid) {
-                wifiConfig = configuration;
-                netId = wifiConfig.networkId;
-                break;
-            }
-        }
+//        WifiConfiguration wifiConfig = null;
+//        int netId = 0;
+//        WifiInfo wifiInfo = wifiManager.getConnectionInfo();  //得到连接的wifi网络
+//        List<WifiConfiguration> configurationList = wifiManager.getConfiguredNetworks();
+//        for (WifiConfiguration configuration : configurationList) {
+//            if (configuration.SSID == ssid) {
+//                wifiConfig = configuration;
+//                netId = wifiConfig.networkId;
+//                break;
+//            }
+//        }
+//
+//        if (null == wifiConfig) {
+//            netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, Integer.parseInt(wifiType)));
+//            if (-1 == netId) {
+//                Log.i(TAG, "添加新的网络到配置文件失败， " + "ssid： " + ssid +  ", wifiType:" + wifiType + "====>> networkID: " + netId);
+//                return false;
+//            } else {
+//                Log.i(TAG, "添加新的网络到配置文件成功， " + "ssid： " + ssid +  ", wifiType:" + wifiType + "====>> networkID: " + netId);
+//            }
+//        }
 
-        if (null == wifiConfig) {
-            netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, Integer.parseInt(wifiType)));
-            if (-1 == netId) {
-                Log.i(TAG, "添加新的网络到配置文件失败， " + "ssid： " + ssid +  ", wifiType:" + wifiType + "====>> networkID: " + netId);
-                return false;
-            } else {
-                Log.i(TAG, "添加新的网络到配置文件成功， " + "ssid： " + ssid +  ", wifiType:" + wifiType + "====>> networkID: " + netId);
-            }
-        }
-
-        boolean enable = wifiManager.enableNetwork(netId, true); //true连接新的网络
+        boolean enable = wifiManager.enableNetwork(configNetworkID, true); //true连接新的网络
         if (false == enable) {
             Log.i(TAG, "将新的网络描述,使能失败!!!");
             return false;
