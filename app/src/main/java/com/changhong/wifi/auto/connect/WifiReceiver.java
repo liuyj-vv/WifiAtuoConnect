@@ -12,7 +12,9 @@ import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
+import android.os.RemoteException;
 import android.support.annotation.RequiresApi;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import java.util.List;
@@ -78,25 +80,34 @@ class WifiReceiver extends BroadcastReceiver {
             wifiAutoConnectHelper.handlerScanResults(wifiManager, connectivityManager);
 
         } else if("TEST_ACTION".equals(action)) {
-            Log.i(TAG, "测试广播处理 " +action);
+            Log.i(TAG, "]]]]]]]]]]]]]]]]测试广播处理: " + action);
             int index;
             List<ScanResult> scanResultList = wifiManager.getScanResults();
 
-//            for (index=0; index<scanResultList.size(); index++) {
-//                Log.i(TAG, scanResultList.get(index).BSSID
-//                        + ",  " + scanResultList.get(index).frequency
-//                        + ",  " + scanResultList.get(index).level
-//                        + ",  " + scanResultList.get(index).describeContents()
-//                        + ",  " + scanResultList.get(index).SSID
-//                        + ",  " + scanResultList.get(index).capabilities);
-//            }
+            for (index = 0; index < scanResultList.size(); index++) {
+                Log.i(TAG, scanResultList.get(index).BSSID
+                        + ",  " + scanResultList.get(index).frequency
+                        + ",  " + scanResultList.get(index).level
+                        + ",  " + scanResultList.get(index).describeContents()
+                        + ",  " + scanResultList.get(index).SSID
+                        + ",  " + scanResultList.get(index).capabilities);
+            }
+        } else if("TEST_ACTION2".equals(action)) {
+            Log.i(TAG, "]]]]]]]]]]]]]]]]测试广播处理: " + action);
 
+            try {
+                WifiInfo wifiInfo =wifiManager.getConnectionInfo();
+                String type = null;
+                type = SetWifiState.getDeviceWLANAddressingType(context);
+                Log.e(TAG, "TYPE: " + type + "   "+ wifiInfo);
+                SetWifiState.setWifiStaticIP(context, "192.68.100.100",
+                        Utils.calcPrefixLengthByMack("255.255.255.0"),
+                        "192.68.100.1",
+                        "8.8.8.8");
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
 
-
-            Utils2.isAppAlive(context, "com.changhong.vod2/.RootActivity3");
-            Utils2.isMainActivityAlive(context, "com.changhong.vod2/.RootActivity3");
-            Utils2.isServiceRunning(context, "com.changhong.vod2/.RootActivity3");
-            Utils2.isTopActivity(context, "com.changhong.vod2/.RootActivity3");
         } else {
             Log.i(TAG, "错误匹配, 未处理的广播: " +action);
         }

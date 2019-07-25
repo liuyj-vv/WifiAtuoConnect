@@ -1,7 +1,9 @@
 package com.changhong.wifi.auto.connect;
 
 import android.content.Context;
+import android.net.wifi.WifiManager;
 import android.os.Build;
+import android.os.RemoteException;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
@@ -114,6 +116,14 @@ public class ExecCommand {
                     while(null != (line = bufferedReader.readLine()) && null != process) {
                         Log.i(TAG, tag + " " + process + ": " + line);
                         FileKeyValueOP.writeAddLineToFile(filename, Utils.getCurrDate() + line);
+
+//                        try {
+//                            WifiManager wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+//                            String type = SetWifiState.getDeviceWLANAddressingType(context);
+//                            Log.e(TAG, "TYPE:" + type + " " + wifiManager.getConnectionInfo());
+//                        } catch (RemoteException e) {
+//                            e.printStackTrace();
+//                        }
 
                         key = "received, (\\d*?)%";
                         pattern = Pattern.compile(key);

@@ -53,18 +53,18 @@ public class SetWifiState {
     }
 
     /**
-     * 设置静态ip地址的方法
+     * 设置当前连接的热点为--静态ip地址
      */
     static boolean setWifiStaticIP(Context context, String staticIP, int staticPrefixLength, String StaticGateway, String staticDNS) {
         WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         WifiConfiguration wifiConfig = null;
-        WifiInfo connectionInfo = wifiManager.getConnectionInfo();  //得到连接的wifi网络
+        WifiInfo wifiInfo = wifiManager.getConnectionInfo();  //得到连接的wifi网络
         List<WifiConfiguration> configuredNetworks = wifiManager.getConfiguredNetworks();
 
-        for (WifiConfiguration conf : configuredNetworks) {
-            if (conf.networkId == connectionInfo.getNetworkId()) {
-                Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName() + "[" + Thread.currentThread().getStackTrace()[2].getLineNumber() + "]:" + conf.toString() );
-                wifiConfig = conf;
+        for (WifiConfiguration wifiConfiguration : configuredNetworks) {
+            if (wifiInfo.getSSID().equals( wifiConfiguration.SSID )) {
+                Log.e(TAG, Thread.currentThread().getStackTrace()[2].getMethodName() + "[" + Thread.currentThread().getStackTrace()[2].getLineNumber() + "]:" + wifiConfiguration.toString() );
+                wifiConfig = wifiConfiguration;
                 break;
             }
         }
@@ -72,15 +72,23 @@ public class SetWifiState {
         try {
             int iRes = -1;
             boolean bRes = false;
-            Log.e(TAG, "wifi --> static 设置成功！" + "iRes: " + iRes + ", bRes: " + bRes + wifiConfig);
+            Log.e(TAG, "wifi --> static 开始设置！" + "iRes: " + iRes + ", bRes: " + bRes + wifiConfig);
             setIpAssignment("STATIC", wifiConfig);
             setIpAddress(InetAddress.getByName(staticIP), staticPrefixLength, wifiConfig);
             setGateway(InetAddress.getByName(StaticGateway), wifiConfig);
             setDNS(InetAddress.getByName(staticDNS), wifiConfig);
             iRes = wifiManager.updateNetwork(wifiConfig); // apply the setting
-            bRes = wifiManager.reassociate();
-            Log.e(TAG, "wifi --> static 设置成功！" + "iRes: " + iRes + ", bRes: " + bRes + wifiConfig);
-            return true;
+            if (-1 != iRes) {
+                boolean isDisconnected =  wifiManager.disconnect(); //断开连接
+                boolean configSaved = wifiManager.saveConfiguration(); // 保存配置的静态ip
+                boolean isEnabled = wifiManager.enableNetwork(wifiConfig.networkId, true); // 使能刚刚保存的配置
+                boolean isReconnected = wifiManager.reconnect();// wifi重新连接配置的静态ip
+                Log.e(TAG, "wifi --> static 设置成功！" + "iRes: " + iRes + ", isReconnected: " + isReconnected + wifiConfig);
+                return true;
+            } else {
+                // 配置失败
+                return false;
+            }
         } catch (Exception e) {
             e.printStackTrace();
             Log.e(TAG, "wifi --> static 设置失败！");

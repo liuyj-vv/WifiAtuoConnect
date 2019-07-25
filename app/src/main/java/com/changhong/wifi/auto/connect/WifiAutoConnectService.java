@@ -70,6 +70,7 @@ public class WifiAutoConnectService extends Service {
         filter.addAction(WifiManager.RSSI_CHANGED_ACTION);
         filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
         filter.addAction("TEST_ACTION");
+        filter.addAction("TEST_ACTION2");
         registerReceiver(wifiReceiver, filter);
         Log.e(TAG, "wifi广播监听注册");
     }

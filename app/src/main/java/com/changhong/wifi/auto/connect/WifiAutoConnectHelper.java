@@ -17,6 +17,7 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.interfaces.ECKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -121,6 +122,10 @@ public class WifiAutoConnectHelper {
         String[] ping_ok_do_line = new String[1];
         String[] wifi_ip_cfg = new String[1];
         String[] wifi_ip = new String[1];
+
+        Log.i(TAG, "开始去读取配置文件");
+
+
         File file = new File(configFile);
         if (!file.exists()) {
             Log.i(TAG, "文件 " + configFile + " 不存在");
@@ -131,7 +136,7 @@ public class WifiAutoConnectHelper {
 
         } else {
             // 配置文件上次读取后，没有修改。
-            Log.d(TAG, "配置信息（未重取），wifiType: " + this.wifiType
+            Log.i(TAG, "配置信息（未重取），wifiType: " + this.wifiType
                     + ", ssid: " + this.ssid
                     + ", passwd: " + this.passwd
                     + ", repeate: " + this.repeate
@@ -147,6 +152,7 @@ public class WifiAutoConnectHelper {
             );
             return true;
         }
+
 
         if (false == FileKeyValueOP.readFileKeyValue(configFile, keyWifiType, wifiType)) {
             return false;
@@ -200,6 +206,7 @@ public class WifiAutoConnectHelper {
             Pattern pattern = Pattern.compile("(.*?)/\\.(.*)");
             Matcher matcher;
 
+            listMapPingOkDo.clear();
             for (int i = 0; i < ping_ok_do.length; i++) {
                 matcher = pattern.matcher(ping_ok_do[i]);
                 if (matcher.find()) {
@@ -456,6 +463,7 @@ public class WifiAutoConnectHelper {
     public  void handlefNetwork(WifiManager wifiManager, ConnectivityManager connectivityManager, NetworkInfo networkInfo, WifiInfo wifiInfo, String bssid) {
         Log.i(TAG, "wifiinfo: " + ((null==wifiInfo) ? null : wifiInfo.toString()));
 
+        boolean bRes;
 
         if (NetworkInfo.DetailedState.DISCONNECTED == networkInfo.getDetailedState()) {
             //连接断开
@@ -469,7 +477,29 @@ public class WifiAutoConnectHelper {
         }
 
         if (NetworkInfo.DetailedState.CONNECTED == networkInfo.getDetailedState()) {
-            startPingTest(wifiManager, connectivityManager);
+            if (!wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
+                connectWifi(wifiManager, ssid, passwd, Integer.parseInt(wifiType));
+                return;
+            }
+
+            try {
+                String type = SetWifiState.getDeviceWLANAddressingType(context);
+                if(type.equals(wifi_ip_cfg)) {
+                    // 配置文件的状态和当前实际的状态相同
+                    startPingTest(wifiManager, connectivityManager);
+                } else {
+                    if (wifi_ip_cfg.equals("static")) {
+                        // 设置静态ip
+                        SetWifiState.setWifiStaticIP(context, wifi_ip, Utils.calcPrefixLengthByMack(wifi_mask), wifi_gateway, "0.0.0.0");
+                    } else if (wifi_ip_cfg.equals("dhcp")) {
+                        // wifi状态设置为 dhcp
+                        SetWifiState.setWifiDHCPIP(context);
+                    }
+                }
+                Log.e(TAG, "TYPE:" + type + " " + wifiManager.getConnectionInfo());
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -563,6 +593,13 @@ public class WifiAutoConnectHelper {
                                         Thread.sleep(iRrepeateTime*1000);
                                     }
 
+                                    if(!wifiInfo.getSSID().equals("\"" + ssid + "\"")) {
+                                        //因为存在突然之间就再也收不到广播的情况
+                                        //如果当前的ssid和配置文件中的ssid已经不相同。
+                                        isPingTestRunging = false;
+                                        break;
+                                    }
+
                                     ExecCommand execCommand = new ExecCommand(context, listMapPingOkDo);
                                     execCommandList.add(execCommand);
                                     execCommand.writeLogToFile(logFile, cmd, currIP , wifiInfo.getBSSID(), currWifiFrequency, wifiInfo.getSSID(), repeate);
@@ -599,16 +636,21 @@ public class WifiAutoConnectHelper {
         int netId;
         boolean enable;
         boolean reconnect;
+        //连接前应判断
+
+
+        // 开始连接
         netId = wifiManager.addNetwork(WifiHelper.createWifiConfig(wifiManager, ssid, passwd, wifiType));
         if (-1 == netId) {
             Log.i(TAG, "添加新的网络到配置文件失败， " + "ssid： " + ssid +  ", wifiType:" + wifiType + "====>> networkID: " + netId);
+            return false;
         } else {
             Log.i(TAG, "添加新的网络到配置文件成功， " + "ssid： " + ssid +  ", wifiType:" + wifiType + "====>> networkID: " + netId);
         }
 
         enable = wifiManager.enableNetwork(netId, true); //true连接新的网络
         if (false == enable) {
-            Log.i(TAG, "将新的网络描述,使能失败!!!");
+            Log.i(TAG, "使能刚刚添加的新的网络描述,使能失败, netId: " + netId);
             return false;
         }
         reconnect = wifiManager.reconnect();
