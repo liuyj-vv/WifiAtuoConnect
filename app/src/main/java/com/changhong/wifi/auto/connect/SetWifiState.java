@@ -11,6 +11,7 @@ import android.util.Log;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -93,6 +94,24 @@ public class SetWifiState {
             e.printStackTrace();
             Log.e(TAG, "wifi --> static 设置失败！");
             return false;
+        }
+    }
+
+    public static void setWifiFrequencyBand(WifiManager wifiManager, int frequency, boolean isEnable) {
+        Class mClass = wifiManager.getClass();
+        Method[] mMethods = mClass.getMethods();
+        for (Method method : mMethods) {
+            if (method.getName().equals("setFrequencyBand")) {
+                try {
+                    Log.i(TAG, "开始运行函数 setFrequencyBand");
+                    method.invoke(wifiManager, 1, true);
+                    Log.i(TAG, "成功运行函数 setFrequencyBand");
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (InvocationTargetException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 

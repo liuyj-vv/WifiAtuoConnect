@@ -4,6 +4,9 @@ import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.ScanResult;
@@ -18,6 +21,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import java.util.List;
+import java.util.TreeMap;
 
 class WifiReceiver extends BroadcastReceiver {
     String TAG = WifiReceiver.class.getPackage().getName();
@@ -25,7 +29,6 @@ class WifiReceiver extends BroadcastReceiver {
     ConnectivityManager connectivityManager;
     static WifiAutoConnectHelper wifiAutoConnectHelper = null;
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -100,18 +103,40 @@ class WifiReceiver extends BroadcastReceiver {
                 String type = null;
                 type = SetWifiState.getDeviceWLANAddressingType(context);
                 Log.e(TAG, "TYPE: " + type + "   "+ wifiInfo);
-                SetWifiState.setWifiStaticIP(context, "192.68.100.100",
+                SetWifiState.setWifiStaticIP(context,
+                        "192.68.100.100",
                         Utils.calcPrefixLengthByMack("255.255.255.0"),
                         "192.68.100.1",
                         "8.8.8.8");
+                Log.e(TAG, "Utils.calcPrefixLengthByMack(\"255.255.255.0\"): " + Utils.calcPrefixLengthByMack("255.255.255.0"));
+
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
 
-        } else {
+        } else if("TEST_ACTION3".equals(action)) {
+            Log.i(TAG, "]]]]]]]]]]]]]]]]测试广播处理: " + action);
+            SetWifiState.setWifiFrequencyBand(wifiManager, 1, false);
+
+        }else if("TEST_ACTION4".equals(action)) {
+            Log.i(TAG, "]]]]]]]]]]]]]]]]测试广播处理: " + action);
+            PackageManager packageManager = context.getPackageManager();
+            List<PackageInfo> packageInfoList = packageManager.getInstalledPackages(PackageManager.GET_ACTIVITIES);
+            for (int index=0; index<packageInfoList.size();index++) {
+                Log.e(TAG, "packageName: " + packageInfoList.get(index).packageName);
+                ActivityInfo[] activities = packageInfoList.get(index).activities;
+                if (null == activities) {
+                    continue;
+                }
+                for (int j=0; j<activities.length; j++) {
+                    Log.e(TAG, "\tactivityName: " + packageInfoList.get(index).activities[j].name);
+                }
+
+            }
+        }
+        else {
             Log.i(TAG, "错误匹配, 未处理的广播: " +action);
         }
         new WifiConfiguration();
     }
-
 }

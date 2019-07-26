@@ -3,6 +3,7 @@ package com.changhong.wifi.auto.connect;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -43,16 +44,27 @@ public class Utils2 {
             //如果没有找到将会抛出异常
             return false;
         }
+
+
     }
     public static boolean isAppAndActivityExistence(Context context, String packageName, String activityName) {
-        Intent intent = new Intent();
-        intent.setClassName(packageName, activityName   );
-        ResolveInfo resolveInfo = context.getPackageManager().resolveActivity(intent, 0);
-        if (null == resolveInfo) {
-            return false;
-        } else {
-            return true;
+        PackageManager packageManager = context.getPackageManager();
+        ActivityInfo[] activities;
+        List<PackageInfo> packageInfoList = packageManager.getInstalledPackages(PackageManager.GET_ACTIVITIES);
+        for (int index=0; index<packageInfoList.size();index++) {
+            if (packageInfoList.get(index).packageName.equals(packageName)) {
+                activities = packageInfoList.get(index).activities;
+                if (null == activities) {
+                    return false;   //没有activity直接返回false
+                }
+                for (int j=0; j<activities.length; j++) {
+                    if (packageInfoList.get(index).activities[j].name.equals(packageName+"."+activityName)) {
+                        return true;
+                    }
+                }
+            }
         }
+        return false;
     }
 
 
