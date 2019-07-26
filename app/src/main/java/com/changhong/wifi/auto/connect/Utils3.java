@@ -57,7 +57,7 @@ public class Utils3 {
      */
 
     public static void printMethods(Object object, MODE mode) {
-        if(null == object){
+        if (null == object) {
             Log.i(TAG, "============= printMethods object 输入参数为空 ======================");
             return;
         }
@@ -67,14 +67,14 @@ public class Utils3 {
         System.out.println("类的名称：" + mClass.getName());
 
         Method[] mMethods;
-        if(MODE.CLASS_PUBLIC == mode) {
+        if (MODE.CLASS_PUBLIC == mode) {
             //2.1 获取所有 public 访问权限的方法
             //包括自己声明和从父类继承的
-            Log.i(TAG, "=============  "+ object.getClass().getName() +" 所有公有的的方法  ======================");
+            Log.i(TAG, "=============  " + object.getClass().getName() + " 所有公有的的方法  ======================");
             mMethods = mClass.getMethods();
         } else if (MODE.CURR_CLASS_ALL == mode) {
             //2.2 获取所有本类的的方法（不问访问权限）
-            Log.i(TAG, "=============  "+ object.getClass().getName() +" 本类所有的的方法  ======================");
+            Log.i(TAG, "=============  " + object.getClass().getName() + " 本类所有的的方法  ======================");
             mMethods = mClass.getDeclaredMethods();
         } else {
             return;
@@ -84,36 +84,29 @@ public class Utils3 {
         for (Method method : mMethods) {
             //获取并输出方法的访问权限（Modifiers：修饰符）
             int modifiers = method.getModifiers();
-            //获取并输出方法的返回值类型
-            Class returnType = method.getReturnType();
-            //打印：获取并输出方法的访问权限、返回值类型、方法名称
-            Log.i(TAG, Modifier.toString(modifiers) + " " + returnType.getName() + " " + method.getName() + "( ");
-
-            //获取并输出方法的所有参数
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                //获取并输出方法的返回值类型
+                Class returnType = method.getReturnType();
+                //打印：获取并输出方法的访问权限、返回值类型、方法名称
+                Log.i(TAG, Modifier.toString(modifiers) + " " + returnType.getName() + " " + method.getName() + "( ");
+
+                //获取并输出方法的所有参数
                 Parameter[] parameters = method.getParameters();
                 for (Parameter parameter : parameters) {
-                    Log.i(TAG,parameter.getType().getName() + " " + parameter.getName() + ",");
+                    Log.i(TAG, parameter.getType().getName() + " " + parameter.getName() + ",");
+                }
+
+                //获取并输出方法抛出的异常
+                Class[] exceptionTypes = method.getExceptionTypes();
+                if (exceptionTypes.length == 0) {
+                    Log.i(TAG, " )");
+                } else {
+                    for (Class c : exceptionTypes) {
+                        Log.i(TAG, " ) throws " + c.getName());
+                    }
                 }
             } else {
                 Log.i(TAG, "\t" + method.toString());
-
-//                Log.i(TAG, "不支持获取参数名称!");
-//                Type[] type = method.getGenericParameterTypes();
-//                for (int index=0; index<type.length; index++) {
-//                    Class<?> classType3 = type.getClass();
-//                    Log.i(TAG, "\t" + classType3 + ",");
-//                }
-            }
-
-            //获取并输出方法抛出的异常
-            Class[] exceptionTypes = method.getExceptionTypes();
-            if (exceptionTypes.length == 0) {
-                Log.i(TAG, " )");
-            } else {
-                for (Class c : exceptionTypes) {
-                    Log.i(TAG, " ) throws " + c.getName());
-                }
             }
         }
     }
@@ -148,5 +141,19 @@ public class Utils3 {
             }
         }
         return null;
+    }
+
+    public static Object runClassMethod(Object object, String method) {
+        Class classObject = object.getClass();
+        Method[] mMethods;
+
+        //2.1 获取所有 public 访问权限的方法
+        //包括自己声明和从父类继承的
+        mMethods = classObject.getMethods();
+
+        //2.2 获取所有本类的的方法（不问访问权限）
+        mMethods = classObject.getDeclaredMethods();
+
+        return object;
     }
 }

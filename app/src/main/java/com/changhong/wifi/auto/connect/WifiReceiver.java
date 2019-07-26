@@ -22,6 +22,7 @@ import android.util.Log;
 
 import java.util.List;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
 
 class WifiReceiver extends BroadcastReceiver {
     String TAG = WifiReceiver.class.getPackage().getName();
@@ -116,7 +117,17 @@ class WifiReceiver extends BroadcastReceiver {
 
         } else if("TEST_ACTION3".equals(action)) {
             Log.i(TAG, "]]]]]]]]]]]]]]]]测试广播处理: " + action);
-            SetWifiState.setWifiFrequencyBand(wifiManager, 1, false);
+            SetWifiState.setWifiFrequencyBand(wifiManager, (int)Utils3.getClassField(wifiManager, "WIFI_FREQUENCY_BAND_2GHZ"), true);
+
+//            Utils3.printFields(wifiManager, Utils3.MODE.CLASS_PUBLIC);
+//            Utils3.printFields(wifiManager, Utils3.MODE.CURR_CLASS_ALL);
+//            Utils3.printMethods(wifiManager, Utils3.MODE.CLASS_PUBLIC);
+//            Utils3.printMethods(wifiManager, Utils3.MODE.CURR_CLASS_ALL);
+
+            Utils3.printFields(Utils3.getClassField(wifiManager, "mService"), Utils3.MODE.CLASS_PUBLIC);
+            Utils3.printFields(Utils3.getClassField(wifiManager, "mService"), Utils3.MODE.CURR_CLASS_ALL);
+//            Utils3.printMethods(Utils3.getClassField(wifiManager, "mService"), Utils3.MODE.CLASS_PUBLIC);
+//            Utils3.printMethods(Utils3.getClassField(wifiManager, "mService"), Utils3.MODE.CURR_CLASS_ALL);
 
         }else if("TEST_ACTION4".equals(action)) {
             Log.i(TAG, "]]]]]]]]]]]]]]]]测试广播处理: " + action);

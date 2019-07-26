@@ -103,8 +103,8 @@ public class SetWifiState {
         for (Method method : mMethods) {
             if (method.getName().equals("setFrequencyBand")) {
                 try {
-                    Log.i(TAG, "开始运行函数 setFrequencyBand");
-                    method.invoke(wifiManager, 1, true);
+                    Log.i(TAG, "开始运行函数 setFrequencyBand: " + frequency + " " + isEnable);
+                    method.invoke(wifiManager, frequency, isEnable);
                     Log.i(TAG, "成功运行函数 setFrequencyBand");
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
