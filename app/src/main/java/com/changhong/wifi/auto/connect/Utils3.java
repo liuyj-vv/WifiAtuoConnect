@@ -7,6 +7,7 @@ import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
@@ -143,17 +144,40 @@ public class Utils3 {
         return null;
     }
 
-    public static Object runClassMethod(Object object, String method) {
+    public static Object runClassMethod(Object object, String methodName) {
         Class classObject = object.getClass();
-        Method[] mMethods;
+        Method[] methods;
 
         //2.1 获取所有 public 访问权限的方法
         //包括自己声明和从父类继承的
-        mMethods = classObject.getMethods();
-
+        methods = classObject.getMethods();
+        for (Method method : methods) {
+            if (method.getName().equals(methodName)) {
+                try {
+                    return method.invoke(object);
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (InvocationTargetException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+        }
         //2.2 获取所有本类的的方法（不问访问权限）
-        mMethods = classObject.getDeclaredMethods();
-
-        return object;
+        methods = classObject.getDeclaredMethods();
+        for (Method method : methods) {
+            if (method.getName().equals(methodName)) {
+                try {
+                    method.setAccessible(true);
+                    return method.invoke(object);
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (InvocationTargetException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+        }
+        return null;
     }
 }

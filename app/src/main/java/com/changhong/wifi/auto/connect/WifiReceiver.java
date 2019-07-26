@@ -117,8 +117,9 @@ class WifiReceiver extends BroadcastReceiver {
 
         } else if("TEST_ACTION3".equals(action)) {
             Log.i(TAG, "]]]]]]]]]]]]]]]]测试广播处理: " + action);
-            SetWifiState.setWifiFrequencyBand(wifiManager, (int)Utils3.getClassField(wifiManager, "WIFI_FREQUENCY_BAND_2GHZ"), true);
-
+            Log.e(TAG, "" + Utils3.runClassMethod(wifiManager, "getFrequencyBand"));
+            SetWifiState.setWifiFrequencyBand(wifiManager, (int)Utils3.getClassField(wifiManager, "WIFI_FREQUENCY_BAND_5GHZ"), true);
+            Log.e(TAG, "" + Utils3.runClassMethod(wifiManager, "getFrequencyBand"));
 //            Utils3.printFields(wifiManager, Utils3.MODE.CLASS_PUBLIC);
 //            Utils3.printFields(wifiManager, Utils3.MODE.CURR_CLASS_ALL);
 //            Utils3.printMethods(wifiManager, Utils3.MODE.CLASS_PUBLIC);
