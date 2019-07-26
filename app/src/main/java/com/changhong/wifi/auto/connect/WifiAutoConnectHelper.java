@@ -54,7 +54,7 @@ public class WifiAutoConnectHelper {
     static String keyPing_ok_do= "ping_ok_do";
     static String keyWifi_ip_cfg= "wifi_ip_cfg";
     static String keyWifi_ip= "wifi_ip";
-    static String configFile = "/mnt/sda/sda1/ch_auto_test_wifi.cfg";
+    static String configFile = "/system/etc/ch_auto_test_wifi.cfg";
     static String logFile;
     List<ExecCommand> execCommandList = new ArrayList<>();
 
