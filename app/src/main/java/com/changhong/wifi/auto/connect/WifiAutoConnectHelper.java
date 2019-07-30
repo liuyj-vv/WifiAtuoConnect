@@ -287,20 +287,23 @@ public class WifiAutoConnectHelper {
         }
 
         if (readConfig()) {
+            ExecCmd execCmd = new ExecCmd();
             String cmd2_4G = "echo 0x21 > /proc/net/rtl88x2bs/wlan0/chan_plan && wpa_cli -iwlan0 -p /data/misc/wifi/sockets scan / wpa_cli -iwlan0 -p /data/misc/wifi/sockets scan_results";
             String cmd5G = "echo 0x1f > /proc/net/rtl88x2bs/wlan0/chan_plan && wpa_cli -iwlan0 -p /data/misc/wifi/sockets scan / wpa_cli -iwlan0 -p /data/misc/wifi/sockets scan_results";
             if (wifi_frequency_band.equals("2.4G")) {
-                try {
-                    Runtime.getRuntime().exec(cmd2_4G);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                execCmd.run(cmd2_4G);
+//                try {
+//                    Runtime.getRuntime().exec(cmd2_4G);
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
             } else if (wifi_frequency_band.equals("5G")) {
-                try {
-                    Runtime.getRuntime().exec(cmd5G);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                execCmd.run(cmd5G);
+//                try {
+//                    Runtime.getRuntime().exec(cmd5G);
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
             } else {
 
             }
