@@ -44,6 +44,7 @@ public class WifiAutoConnectHelper {
     String wifi_ip;
     String wifi_mask;
     String wifi_gateway;
+    String wifi_frequency_band;
 
 
     static String keyWifiType = "wifiType";
@@ -54,6 +55,7 @@ public class WifiAutoConnectHelper {
     static String keyPing_ok_do= "ping_ok_do";
     static String keyWifi_ip_cfg= "wifi_ip_cfg";
     static String keyWifi_ip= "wifi_ip";
+    static String keyWifi_frequency_band = "wifi_frequency_band";
     static String configFile = "/system/etc/ch_auto_test_wifi.cfg";
     static String logFile;
     List<ExecCommand> execCommandList = new ArrayList<>();
@@ -118,6 +120,7 @@ public class WifiAutoConnectHelper {
         String[] ssid = new String[1];
         String[] passwd = new String[1];
         String[] ping_repeate = new String[1];
+        String[] wifi_frequency_band = new String[1];
         String[] ping_parameter = new String[1];
         String[] ping_ok_do_line = new String[1];
         String[] wifi_ip_cfg = new String[1];
@@ -199,6 +202,13 @@ public class WifiAutoConnectHelper {
         this.repeate = ping_repeate[0];
 
 
+        if (false == FileKeyValueOP.readFileKeyValue(configFile, keyWifi_frequency_band, wifi_frequency_band)) {
+            this.wifi_frequency_band = "";
+        }
+        this.wifi_frequency_band = wifi_frequency_band[0];
+
+
+
         if (false == FileKeyValueOP.readFileKeyValue(configFile, keyPing_ok_do, ping_ok_do_line)) {
 
         } else {
@@ -274,6 +284,26 @@ public class WifiAutoConnectHelper {
             destroyPingTest();
             LedControl.ledWifiConnect_no();
             return;
+        }
+
+        if (readConfig()) {
+            String cmd2_4G = "echo 0x21 > /proc/net/rtl88x2bs/wlan0/chan_plan && wpa_cli -iwlan0 -p /data/misc/wifi/sockets scan / wpa_cli -iwlan0 -p /data/misc/wifi/sockets scan_results";
+            String cmd5G = "echo 0x1f > /proc/net/rtl88x2bs/wlan0/chan_plan && wpa_cli -iwlan0 -p /data/misc/wifi/sockets scan / wpa_cli -iwlan0 -p /data/misc/wifi/sockets scan_results";
+            if (wifi_frequency_band.equals("2.4G")) {
+                try {
+                    Runtime.getRuntime().exec(cmd2_4G);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else if (wifi_frequency_band.equals("5G")) {
+                try {
+                    Runtime.getRuntime().exec(cmd5G);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+
+            }
         }
 
         List<ScanResult>scanResultList = wifiManager.getScanResults();
